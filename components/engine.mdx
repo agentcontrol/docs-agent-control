@@ -1,0 +1,32 @@
+---
+title: Engine
+description: Core evaluation logic, control processing, and the evaluator registry.
+icon: "engine"
+---
+
+<Info>
+This page is a work in progress. Full engine documentation is coming soon.
+</Info>
+
+## Overview
+
+The Agent Control Engine (`agent-control-engine`) is the core evaluation component. It processes control rules, runs evaluators, and enforces decisions.
+
+## Key Responsibilities
+
+- **Control matching** — Determines which controls apply to a given step based on scope
+- **Data extraction** — Uses selectors to pull the right data from the payload
+- **Evaluator execution** — Runs the configured evaluator against the selected data
+- **Decision enforcement** — Applies "deny wins" semantics across all matching controls
+- **Observability** — Logs execution stats, matches, and errors
+
+## Evaluator Registry
+
+The engine discovers evaluators via Python entry points:
+
+```toml
+[project.entry-points."agent_control.evaluators"]
+my-evaluator = "my_package.evaluator:MyEvaluator"
+```
+
+See the [Evaluator Overview](/evaluators/overview#custom-evaluators) for how to build custom evaluators.

@@ -1,0 +1,215 @@
+---
+title: Quickstart
+description: Install Agent Control, start the server, and protect your first agent in minutes.
+icon: "rocket"
+---
+
+Protect your AI agent in 4 simple steps.
+
+## Prerequisites: 
+- **Python 3.12+**
+- **uv** — Fast Python package manager (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- **Docker** — For running PostgreSQL
+- **Node.js 18+** — For the web dashboard (optional)
+
+---
+
+## Step 1: Start the Agent Control Server
+
+The server stores controls and evaluates agent operations for safety.
+
+```bash
+# Clone the repository (contains the server)
+git clone https://github.com/agentcontrol/agent-control.git
+cd agent-control
+
+# Install dependencies
+make sync
+
+# Start PostgreSQL database
+cd server && docker-compose up -d && cd ..
+
+# Run database migrations
+make server-alembic-upgrade
+
+# Start the Agent Control server
+make server-run
+```
+
+**Server is now running at `http://localhost:8000`** ✅
+
+> 💡 **Verify it's working:** Open http://localhost:8000/health in your browser - you should see `{"status": "ok"}`
+
+---
+
+## Step 2: (Optional) Start the Web Dashboard
+
+The dashboard provides a UI for managing agents, controls, and viewing analytics. Everything can be done via API/SDK, but the UI is more convenient.
+
+In a separate terminal:
+```bash
+cd ~/path_to_agent-control/
+cd ui
+pnpm install
+pnpm dev
+```
+
+**Dashboard is now running at `http://localhost:4000`** ✅
+
+---
+
+### Step 3: Setup Controls for Your Agent
+
+Create controls to protect your agent's operations:
+
+```python
+# setup.py - Run once to configure everything
+import asyncio
+from datetime import datetime, UTC
+from agent_control import AgentControlClient, controls, policies, agents
+from agent_control_models import Agent
+
+async def setup():
+    async with AgentControlClient() as client:  # Defaults to localhost:8000
+        # 1. Register agent first (required before assigning policy)
+        agent = Agent(
+            # Your agent's UUID
+            agent_id="550e8400-e29b-41d4-a716-446655440000",
+            agent_name="My Chatbot",
+            agent_created_at=datetime.now(UTC).isoformat()
+        )
+        await agents.register_agent(client, agent, steps=[])
+
+        # 2. Create control (blocks SSN patterns)
+        control = await controls.create_control(
+            client,
+            name="block-ssn",
+            data={
+                "enabled": True,
+                "execution": "server",
+                "scope": {"stages": ["post"]},
+                "selector": {"path": "output"},
+                "evaluator": {
+                    "name": "regex", # Inbuilt regex evaluator. See agent-control/evaluators to see all available OOTB evaluators
+                    "config": {"pattern": r"\b\d{3}-\d{2}-\d{4}\b"}
+                },
+                "action": {"decision": "deny"}
+            }
+        )
+        # 3. Create policy
+        policy = await policies.create_policy(client,   name="production-policy")
+
+        # 4. Add control to policy
+        await policies.add_control_to_policy(
+            client,
+            policy_id=policy["policy_id"],
+            control_id=control["control_id"]
+        )
+
+        # 5. Assign policy to agent
+        await policies.assign_policy_to_agent(
+            client,
+            agent_id=AGENT_ID,
+            policy_id=policy["policy_id"]
+        )
+
+        print("✅ Setup complete!")
+        print(f"   Control ID: {control['control_id']}")
+        print(f"   Policy ID: {policy['policy_id']}")
+
+asyncio.run(setup())
+```
+
+**In your Agent application directory** (not inside the agent-control repo):
+```bash
+uv venv
+uv .venv/bin/activate
+uv pip install agent-control-sdk
+uv run setup.py
+```
+
+---
+
+### Step 4: Now, Use in Your Agent
+
+Now protect your functions with `@control()`:
+
+```python
+# my_agent.py
+import asyncio
+import agent_control
+from agent_control import control, ControlViolationError
+
+# Initialize your agent
+agent_control.init(
+    agent_name="My Chatbot",
+    agent_id="550e8400-e29b-41d4-a716-446655440000"
+)
+
+# Protect any function (like LLM calls)
+@control()
+async def chat(message: str) -> str:
+    # In production: response = await llm.ainvoke(message)
+    # For demo: simulate LLM that might leak sensitive data
+    if "test" in message.lower():
+        return "Your SSN is 123-45-6789"  # Will be blocked!
+    return f"Echo: {message}"
+
+# Test it
+async def main():
+    try:
+        print(await chat("test"))  # ❌ Blocked
+    except ControlViolationError as e:
+        print(f"❌ Blocked: {e.control_name}")
+
+asyncio.run(main())
+```
+
+```bash
+uv run my_agent.py
+```
+
+**🎉 Done!** Your agent now blocks SSN patterns automatically.
+
+---
+
+### What's Happening Under the Hood?
+
+1. Your app calls `chat("test")`
+2. Function executes and returns `"Your SSN is 123-45-6789"`
+3. `@control()` decorator sends output to Agent Control server
+4. Server checks the output against all controls
+5. `block-ssn` control finds SSN pattern → matches!
+6. Server returns `is_safe=False` with the matched control
+7. SDK raises `ControlViolationError` and blocks the response
+
+**Key Benefits:**
+- ✅ Controls are managed **separately** from your code
+- ✅ Update controls **without redeploying** your agent
+- ✅ Same controls can protect **multiple agents**
+- ✅ View analytics and control execution in the dashboard
+
+---
+
+## Next Steps
+
+- **Add more controls:** See [Concepts](/concepts#defining-controls) for examples and guidance
+- **Explore evaluators:** Try AI-powered evaluators like [Luna-2](/concepts#example:-block-toxic-input-luna-2-ai) or create custom evaluators. See [examples/DeepEval](/examples/overview) for custom evaluator examples
+- **Production setup:** Enable authentication - see the [Reference](/reference#authentication)
+- **Check examples:** See [examples/](/examples/overview) for real-world patterns
+
+> **💡 Pro Tip:** Start with simple regex controls, then graduate to AI-powered evaluators for complex safety checks!
+
+## What's Next?
+
+<CardGroup cols={2}>
+
+  <Card title="Concepts" icon="lightbulb" href="/concepts">
+    Learn about policies, controls, selectors, evaluators, and actions.
+  </Card>
+
+  <Card title="Examples" icon="code" href="/examples/overview">
+    See working integration examples with LangChain, CrewAI, and more.
+  </Card>
+
+</CardGroup>

@@ -1,0 +1,14 @@
+{
+  "name": "agent-control-docs",
+  "version": "1.0.0",
+  "description": "Agent Control Documentation — powered by Mintlify",
+  "private": true,
+  "scripts": {
+    "dev": "mintlify dev",
+    "build": "mintlify build",
+    "broken-links": "mintlify broken-links"
+  },
+  "dependencies": {
+    "mintlify": "^4.0.525"
+  }
+}

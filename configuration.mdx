@@ -1,0 +1,133 @@
+---
+title: Configuration
+description: Environment variables, server settings, authentication, and database setup.
+icon: "gear"
+---
+
+## SDK Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AGENT_CONTROL_URL` | `http://localhost:8000` | Server URL |
+| `AGENT_CONTROL_API_KEY` | — | API key for authentication |
+
+---
+
+## Server Environment Variables
+
+### Core Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HOST` | `0.0.0.0` | Server bind address |
+| `PORT` | `8000` | Server port |
+| `DEBUG` | `false` | Enable debug mode |
+| `LOG_LEVEL` | `INFO` | Logging level |
+| `API_VERSION` | `v1` | API version prefix |
+| `API_PREFIX` | `/api` | API path prefix |
+
+### CORS
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CORS_ORIGINS` | `*` | Allowed origins (comma-separated) |
+| `ALLOW_METHODS` | `*` | Allowed HTTP methods |
+| `ALLOW_HEADERS` | `*` | Allowed headers |
+
+### Database
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_HOST` | `localhost` | PostgreSQL host |
+| `DB_PORT` | `5432` | PostgreSQL port |
+| `DB_USER` | `agent_control` | Database user |
+| `DB_PASSWORD` | `agent_control` | Database password |
+| `DB_DATABASE` | `agent_control` | Database name |
+| `DB_DRIVER` | `psycopg` | Database driver |
+| `DB_URL` | — | Full database URL (overrides individual settings above) |
+
+### Evaluators
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GALILEO_API_KEY` | — | API key for Luna-2 evaluator |
+
+---
+
+## Authentication
+
+Agent Control supports API key authentication for production deployments.
+
+### Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AGENT_CONTROL_API_KEY_ENABLED` | `false` | Master toggle for authentication |
+| `AGENT_CONTROL_API_KEYS` | — | Comma-separated list of valid API keys |
+| `AGENT_CONTROL_ADMIN_API_KEYS` | — | Comma-separated list of admin API keys |
+
+### Usage
+
+Include the API key in the `X-API-Key` header:
+
+```bash
+curl -H "X-API-Key: your-api-key" http://localhost:8000/api/v1/agents
+```
+
+With the Python SDK:
+
+```python
+from agent_control import AgentControlClient
+
+# Via constructor
+async with AgentControlClient(api_key="your-api-key") as client:
+    await client.health_check()
+
+# Or via environment variable
+# export AGENT_CONTROL_API_KEY="your-api-key"
+async with AgentControlClient() as client:
+    await client.health_check()
+```
+
+### Access Levels
+
+| Endpoint | Required Level |
+|----------|----------------|
+| `/health` | Public (no auth) |
+| All `/api/v1/*` | API key required |
+
+### Key Rotation
+
+Agent Control supports multiple API keys for zero-downtime rotation:
+
+1. Add new key to `AGENT_CONTROL_API_KEYS` (e.g., `key1,key2,new-key`)
+2. Deploy the server
+3. Update clients to use the new key
+4. Remove the old key from the variable
+5. Redeploy
+
+---
+
+## UI Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend API URL |
+
+---
+
+## Database Setup
+
+Agent Control uses PostgreSQL. The easiest way to run it locally:
+
+```bash
+cd server
+docker-compose up -d          # Start PostgreSQL
+make alembic-upgrade          # Run migrations
+```
+
+Default credentials in docker-compose:
+- **User:** `agent_control`
+- **Password:** `agent_control`
+- **Database:** `agent_control`
+- **Port:** `5432`

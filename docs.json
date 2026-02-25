@@ -1,0 +1,101 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "aspen",
+  "name": "Agent Control Docs",
+  "colors": {
+    "primary": "#E35454",
+    "light": "#40C2F9",
+    "dark": "#1098F7"
+  },
+  "fonts": {
+    "family": "Geist"
+  },
+  "favicon": "/favicon.png",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "concepts",
+              "architecture",
+              "configuration"
+            ]
+          },
+          {
+            "group": "Evaluators",
+            "pages": [
+              "evaluators/overview",
+              "evaluators/json",
+              "evaluators/sql"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "components/sdk",
+              "components/server",
+              "components/engine",
+              "components/dashboard"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/overview",
+              "examples/agent-control-demo",
+              "examples/crewai",
+              "examples/customer-support",
+              "examples/deepeval",
+              "examples/galileo-luna2" ,
+              "examples/langchain-sql"
+            ]
+          },
+          {
+            "group": "More",
+            "pages": [
+              "observability",
+              "reference",
+              "testing"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "background": {
+    "decoration": "gradient"
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Get Started",
+      "href": "https://example.com"
+    }
+  },
+  "footer": {
+    "links": [
+      {
+        "items": [
+          {
+            "label": "Home",
+            "href": "https://example.com"
+          },
+          {
+            "label": "Documentation",
+            "href": "/"
+          }
+        ]
+      }
+    ]
+  }
+}

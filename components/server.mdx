@@ -1,0 +1,34 @@
+---
+title: Server
+description: FastAPI server for control management, policy enforcement, and the REST API.
+icon: "server"
+---
+
+<Info>
+This page is a work in progress. Full server documentation is coming soon.
+</Info>
+
+## Overview
+
+The Agent Control Server (`agent-control-server`) is a FastAPI service that stores controls, manages policies, and evaluates agent interactions.
+
+## Running the Server
+
+```bash
+# Start database
+cd server && docker-compose up -d && make alembic-upgrade && cd ..
+
+# Start the server
+make server-run
+```
+
+Server runs at `http://localhost:8000`.
+
+## Key Features
+
+- **REST API** for control and policy management
+- **PostgreSQL** for persistent storage
+- **API key authentication** for production
+- **Evaluator registry** for plugin discovery
+
+See the [Reference](/reference#server-api) for full API endpoint documentation and [Configuration](/configuration) for environment variables.

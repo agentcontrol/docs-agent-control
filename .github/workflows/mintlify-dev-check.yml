@@ -1,0 +1,75 @@
+name: Mintlify Dev Check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  mintlify-dev:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    name: Check Mintlify Dev Server
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm install -g mint
+
+      - name: Run Mintlify Dev (Short Test)
+        id: dev_test
+        continue-on-error: true
+        run: |
+          timeout 60s mint dev > dev.log 2>&1 || true
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ] && [ $EXIT_CODE -ne 124 ]; then
+            echo "status=failed" >> $GITHUB_OUTPUT
+            cat dev.log
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for errors in logs
+        id: log_check
+        run: |
+          if grep -i -e "error" -e "warning" dev.log | grep -v "EADDRINUSE" | grep -v "timeout"; then
+            echo "Found errors in dev log"
+            echo "status=failed" >> $GITHUB_OUTPUT
+          else
+            echo "No critical errors found in dev log"
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Dev Log (for debug)
+        id: upload_log
+        if: steps.dev_test.outputs.status == 'failed' || steps.log_check.outputs.status == 'failed'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mintlify-dev-log
+          path: dev.log
+
+      - name: Comment Dev Failure on PR
+        if: steps.dev_test.outputs.status == 'failed' || steps.log_check.outputs.status == 'failed'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: mintlify-dev
+          message: |
+            ❌ Mintlify Dev Server Failed!
+            
+            Download the [dev log here](${{ steps.upload_log.outputs.artifact-url }}) for more details.
+
+      - name: Set Job Status to Failure
+        if: steps.dev_test.outputs.status == 'failed' || steps.log_check.outputs.status == 'failed'
+        run: |
+          echo "Job failed due to previous errors."
+          exit 1
