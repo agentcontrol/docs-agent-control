@@ -1,15 +1,7 @@
 ---
-title: LangChain SQL Agent
+title: LangChain SQL Agent with Agent Control
 description: SQL injection protection with LangChain integration.
 ---
-
-<Info>
-This page is a work in progress. Full walkthrough coming soon.
-</Info>
-
-
-
-# LangChain SQL Agent with Agent Control
 
 This example demonstrates integrating Agent Control with a LangChain SQL agent to block dangerous SQL operations.
 
@@ -32,6 +24,7 @@ make run
 ```
 
 **Verify evaluators are loaded:**
+
 ```bash
 curl http://localhost:8000/api/v1/evaluators | python -m json.tool
 # Should show: {"sql": {"name": "sql", "version": "1.0.0", ...}, ...}
@@ -51,6 +44,7 @@ uv run setup_sql_controls.py
 ```
 
 This creates:
+
 - SQL safety control (blocks DROP, DELETE, TRUNCATE, ALTER, GRANT)
 - Policy with the control
 - Assigns policy to the SQL agent
@@ -69,16 +63,19 @@ uv run sql_agent_protection.py
 ### Local vs Remote Control Execution
 
 **Remote (server-side) controls**:
+
 - Default mode
 - Requires running the Agent Control server
 - Uses `@control()` to call `/api/v1/evaluation` on the server
 
 **Local (SDK-side) controls**:
+
 - Set `AGENT_CONTROL_LOCAL_EVAL=true`
 - Controls must be configured with `execution: "sdk"`
 - Uses `agent_control.check_evaluation_with_local(...)` before executing the tool
 
 Example:
+
 ```bash
 export AGENT_CONTROL_LOCAL_EVAL=true
 uv run sql_agent_protection.py
@@ -87,13 +84,15 @@ uv run sql_agent_protection.py
 ### Expected Behavior
 
 **Safe Query (SELECT with LIMIT):**
-```
+
+```text
 ✅ Safety check passed for: SELECT * FROM Track LIMIT 3
 [Query executes successfully]
 ```
 
 **Dangerous Query (DROP TABLE):**
-```
+
+```text
 ✗ Execution blocked!
 Error: Control evaluation failed...
 [Query is blocked, table is NOT dropped]
@@ -121,6 +120,7 @@ safe_query_tool = tool(
 ### 2. Automatic Tool Call Detection
 
 The `@control()` decorator:
+
 1. Detects this is a tool (via `name` attribute)
 2. Creates a `Step` payload with `type="tool"`, `name`, and `input`
 3. Sends to server for evaluation **before** execution
@@ -129,6 +129,7 @@ The `@control()` decorator:
 ### 3. SQL Control Execution
 
 The SQL is evaluated using the `sql` evaluator:
+
 - Parses the query
 - Checks for blocked operations (DROP, DELETE, etc.)
 - Validates LIMIT clauses
@@ -137,6 +138,7 @@ The SQL is evaluated using the `sql` evaluator:
 ### 4. Fail-Safe Error Handling
 
 If the control check fails with an error:
+
 - ✅ Execution is BLOCKED (fail-safe)
 - ✅ RuntimeError is raised
 - ❌ Query never executes
@@ -148,6 +150,7 @@ If the control check fails with an error:
 **Cause:** Server was started before evaluators were installed, or using old code.
 
 **Fix:**
+
 ```bash
 # Kill old server
 pkill -f "uvicorn agent_control_server"
@@ -165,19 +168,21 @@ cd server && make run
 ### DROP TABLE still executes
 
 **Causes:**
+
 1. Server not running or evaluators not loaded (remote mode)
 2. Control not assigned to agent's policy
 3. Control data missing/invalid (control not returned to agent)
 4. Local mode enabled but control is still `execution: "server"`
 
 **Fix:**
+
 1. Restart server with `make run`
 2. Re-run `setup_sql_controls.py`
 3. Verify decorator code is up-to-date
 
 ## Architecture
 
-```
+```text
 LangChain Agent
     ↓
 @tool("sql_db_query")  ← Marks as LangChain tool

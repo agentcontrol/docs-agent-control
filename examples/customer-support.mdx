@@ -3,12 +3,6 @@ title: Customer Support Agent
 description: Full example with multiple tools, PII protection, and toxicity detection.
 ---
 
-<Info>
-This page is a work in progress. Full walkthrough coming soon.
-</Info>
-
-# Customer Support Agent Example
-
 This example demonstrates how to integrate the `agent-control` SDK into an existing application. It simulates a **Customer Support Agent** - a realistic enterprise scenario that shows the key patterns for protecting AI agents with server-defined controls.
 
 ## Why This Example?
@@ -32,10 +26,11 @@ python examples/customer_support_agent/run_demo.py
 ```
 
 The `demo.sh start` command:
+
 - Starts PostgreSQL database
 - Runs migrations
-- Starts the API server (http://localhost:8000)
-- Starts the UI (http://localhost:4000)
+- Starts the API server ([http://localhost:8000](http://localhost:8000))
+- Starts the UI ([http://localhost:4000](http://localhost:4000))
 - **Registers the agent with demo controls** (PII detection, prompt injection)
 
 When you open the UI, you'll see the agent with controls already configured.
@@ -58,12 +53,14 @@ When you open the UI, you'll see the agent with controls already configured.
 ### First-Time Setup
 
 1. **Install the SDK and evaluators**:
+
    ```bash
    pip install -e sdks/python
    pip install -e evaluators
    ```
 
 2. **Install UI dependencies**:
+
    ```bash
    cd ui
    pnpm install
@@ -73,31 +70,39 @@ When you open the UI, you'll see the agent with controls already configured.
 
 If you prefer to run services manually:
 
-1. **Start the database** (requires Docker):
-   ```bash
-   cd server
-   docker compose up -d
-   ```
+<Steps>
+  <Step title="Start the database (requires Docker)">
+```bash
+cd server
+docker compose up -d
+```
+  </Step>
 
-2. **Run database migrations**:
-   ```bash
-   cd server
-   make alembic-upgrade
-   ```
+  <Step title="Run database migrations">
+```bash
+cd server
+make alembic-upgrade
+```
+  </Step>
 
-3. **Start the server** (Terminal 1):
-   ```bash
-   cd server
-   make run
-   ```
-   Server runs at http://localhost:8000
+  <Step title="Start the server (Terminal 1)">
+```bash
+cd server
+make run
+```
 
-4. **Start the UI** (Terminal 2):
-   ```bash
-   cd ui
-   pnpm dev
-   ```
-   UI runs at http://localhost:4000
+Server runs at [http://localhost:8000](http://localhost:8000)
+  </Step>
+
+  <Step title="Start the UI (Terminal 2)">
+```bash
+cd ui
+pnpm dev
+```
+
+UI runs at [http://localhost:4000](http://localhost:4000)
+  </Step>
+</Steps>
 
 ## Running the Demo
 
@@ -108,7 +113,8 @@ python examples/customer_support_agent/run_demo.py
 ```
 
 Test different scenarios:
-```
+
+```text
 You: Hello, I need help with a refund
 Agent: I understand you'd like a refund. Let me look into your order...
 
@@ -127,6 +133,7 @@ Goodbye!
 ### Automated Mode
 
 Run all test scenarios automatically:
+
 ```bash
 python examples/customer_support_agent/run_demo.py --automated
 ```
@@ -134,13 +141,14 @@ python examples/customer_support_agent/run_demo.py --automated
 ### Reset Agent Controls
 
 To remove all controls from the agent (keeps the agent registered):
+
 ```bash
 python examples/customer_support_agent/run_demo.py --reset
 ```
 
 ### Adding Custom Controls
 
-1. Open http://localhost:4000
+1. Open [http://localhost:4000](http://localhost:4000)
 2. Click on "Customer Support Agent" in the list
 3. Click "Add Control" to create additional controls
 
@@ -176,6 +184,7 @@ agent_control.init(
 ```
 
 This:
+
 - Registers the agent with the server
 - Fetches the assigned policy and controls
 - Enables the `@control()` decorator
@@ -194,6 +203,7 @@ async def respond_to_customer(message: str) -> str:
 ```
 
 The decorator:
+
 - Calls the server with `check_stage="pre"` before execution (validates input)
 - Calls the server with `check_stage="post"` after execution (validates output)
 - Raises `ControlViolationError` if a control triggers with "deny" action
@@ -218,6 +228,7 @@ except ControlViolationError as e:
 **Important**: Controls are defined on the server via the UI, not in code.
 
 This design provides:
+
 - **Centralized management**: Security team controls policies without code changes
 - **Instant updates**: Change controls without redeploying agents
 - **Audit trail**: Server logs all control evaluations
@@ -225,7 +236,7 @@ This design provides:
 
 ## Project Structure
 
-```
+```bash
 customer_support_agent/
 ├── README.md                 # This file
 ├── demo.sh                   # Start/stop/reset script
@@ -237,6 +248,7 @@ customer_support_agent/
 ### demo.sh
 
 Manages the full demo lifecycle:
+
 - `start` - Starts database, server, UI, and sets up demo controls
 - `stop` - Stops all services
 - `reset` - Deletes database and stops services
@@ -245,6 +257,7 @@ Manages the full demo lifecycle:
 ### setup_demo_controls.py
 
 Creates the demo agent with pre-configured controls:
+
 - `block-ssn-in-output` - Blocks responses containing SSN patterns
 - `block-prompt-injection` - Blocks common injection attempts
 - `block-credit-card` - Blocks credit card numbers in input
@@ -252,6 +265,7 @@ Creates the demo agent with pre-configured controls:
 ### support_agent.py
 
 Contains:
+
 - SDK initialization
 - Mock services (LLM, database, knowledge base, tickets)
 - Protected functions with `@control()` decorator
@@ -260,6 +274,7 @@ Contains:
 ### run_demo.py
 
 Contains:
+
 - Interactive chat loop
 - Test command handlers (`/test-pii`, `/test-injection`, etc.)
 - Automated test scenarios
@@ -269,6 +284,7 @@ Contains:
 The demo setup creates three controls automatically. Here are examples of additional controls you might add:
 
 ### PII Detection (Post-check on output)
+
 ```yaml
 name: block-pii-in-output
 scope:
@@ -286,6 +302,7 @@ action:
 ```
 
 ### Prompt Injection (Pre-check on input)
+
 ```yaml
 name: block-prompt-injection
 scope:
@@ -303,6 +320,7 @@ action:
 ```
 
 ### Toxic Content (Pre-check on input)
+
 ```yaml
 name: block-toxic-input
 scope:
@@ -332,9 +350,9 @@ action:
 
 ## Next Steps
 
-- Explore the [main examples](../) for more integration patterns
-- Read the [SDK documentation](../../sdks/python/README.md)
-- Check the [server API documentation](../../server/README.md)
+- Explore the [main examples](./overview.mdx) for more integration patterns
+- Read the [SDK documentation](../sdk/python-sdk.mdx)
+- Check the [server API documentation](../components/server.mdx)
 
 
 ## Overview

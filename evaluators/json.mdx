@@ -1,14 +1,10 @@
 ---
-title: JSON Evaluator
+title: JSON Evaluator Quickstart 
 description: Validate JSON structure, types, and constraints in LLM outputs and tool steps.
 icon: "brackets-curly"
 ---
 
-# JSON Evaluator Quickstart Guide
-
 A practical guide for configuring JSON validation controls for LLM outputs and tool steps.
-
----
 
 ## What is the JSON Evaluator?
 
@@ -19,6 +15,7 @@ The JSON Validator Evaluator validates JSON data from LLM responses and tool ste
 > **💡 JSON Schema vs Field-Level Validation**
 >
 > **JSON Schema can handle ALL the validation checks** this evaluator provides:
+
 > - Required fields → `"required": ["field1"]`
 > - Type checking → `"type": "string"`
 > - Numeric ranges → `"minimum": 0, "maximum": 100`
@@ -27,17 +24,20 @@ The JSON Validator Evaluator validates JSON data from LLM responses and tool ste
 > - Pattern matching → `"pattern": "^[a-z]+$"`
 >
 > **So why use field-level options?**
+
 > - ✅ **Simpler** - No need to learn JSON Schema syntax
 > - ✅ **Clearer** - More readable for simple validations
 > - ✅ **Faster to write** - Less boilerplate for common checks
 >
 > **When to use JSON Schema:**
+
 > - Complex nested structures (objects within objects)
 > - Array validation (validate each item)
 > - Cross-field dependencies
 > - When you're already familiar with JSON Schema
 >
 > **When to use field-level options:**
+
 > - Simple validations (types, ranges, enums)
 > - You don't know JSON Schema
 > - Quick checks without learning new syntax
@@ -45,11 +45,13 @@ The JSON Validator Evaluator validates JSON data from LLM responses and tool ste
 > **💡 Performance Note**
 >
 > Uses Google RE2 regex engine for pattern matching, which is safe from ReDoS attacks but has some limitations:
+
 > - ❌ No backreferences: `(foo|bar)\1`
 > - ❌ No lookahead/lookbehind: `(?=foo)`, `(?<=bar)`
 > - ✅ All common patterns: `[a-z]`, `[0-9]`, `\w`, `\d`, `\s`, `^`, `$`, `*`, `+`, `{n}`, etc.
 
 **Key Benefits:**
+
 - **Data Quality**: Ensure LLM outputs have correct structure and types
 - **API Safety**: Prevent malformed data from reaching downstream systems
 - **Business Rules**: Validate field values meet domain requirements
@@ -60,6 +62,7 @@ The JSON Validator Evaluator validates JSON data from LLM responses and tool ste
 **When to use:** Any application where LLM outputs or tool step input needs validation before use, especially in production with business-critical data or API integrations.
 
 **Common Use Cases:**
+
 - **Structured LLM Outputs**: Ensure LLMs return properly formatted JSON responses matching API contracts
 - **LLM Self-Correction**: Feed validation errors back to LLM for automatic retry and correction
 - **Tool Input Validation**: Block tool steps with invalid parameters before execution
@@ -92,11 +95,13 @@ The JSON Validator evaluates data in this order:
 **What**: Ensure critical fields are present in the JSON data.
 
 **When to use**:
+
 - Block LLM outputs missing essential fields
 - Enforce API contract requirements
 - Validate all necessary data is provided before processing
 
 **Configuration**:
+
 ```json
 {
   "required_fields": ["user_id", "email", "timestamp"]
@@ -111,6 +116,7 @@ This controls whether `null` values are acceptable in required fields.
 - `true`: `null` is treated as **present** → validation PASSES
 
 **Example with `allow_null_required: false` (default):**
+
 ```json
 // Config
 {
@@ -126,6 +132,7 @@ This controls whether `null` values are acceptable in required fields.
 ```
 
 **Example with `allow_null_required: true`:**
+
 ```json
 // Config
 {
@@ -150,11 +157,13 @@ This controls whether `null` values are acceptable in required fields.
 **What**: Validate that fields have the correct JSON data types.
 
 **When to use**:
+
 - Ensure fields are the expected type before using them
 - Prevent type errors in downstream code
 - Catch LLM mistakes (e.g., returning string "123" instead of number 123)
 
 **Configuration**:
+
 ```json
 {
   "field_types": {
@@ -171,6 +180,7 @@ This controls whether `null` values are acceptable in required fields.
 **Valid type names**: `"string"`, `"number"`, `"integer"`, `"boolean"`, `"array"`, `"object"`, `"null"`
 
 **Example**: Block wrong types:
+
 ```json
 {
   "field_types": {
@@ -188,6 +198,7 @@ This controls whether `null` values are acceptable in required fields.
 **What**: Validate field values meet specific requirements (numeric ranges, enum values, string length).
 
 **When to use**:
+
 - Ensure numeric values are within acceptable ranges
 - Restrict fields to predefined sets of values
 - Enforce minimum/maximum string lengths
@@ -203,12 +214,14 @@ This controls whether `null` values are acceptable in required fields.
 | `max_length` | integer | Maximum string length | `20`, `500`, `100` |
 
 **Notes**:
+
 - `min`/`max` apply only to numeric values (integers and floats)
 - `enum` works with any JSON value type (strings, numbers, booleans)
 - `min_length`/`max_length` apply only to string values
 - Multiple constraints can be combined on the same field
 
 **For more complex validation needs**: If the built-in constraint options are too limited for your use case, consider using **JSON Schema** (see section 1) which provides comprehensive validation capabilities including:
+
 - Conditional validation (if/then/else)
 - Array item validation (minItems, maxItems, uniqueItems)
 - String format validation (email, uri, date-time, etc.)
@@ -242,6 +255,7 @@ JSON Schema is the most powerful option and can handle arbitrarily complex valid
 ```
 
 **Case sensitivity**:
+
 - `case_sensitive_enums: true` (default): `"Active"` ≠ `"active"`
 - `case_sensitive_enums: false`: `"Active"` = `"active"` = `"ACTIVE"`
 
@@ -264,11 +278,13 @@ JSON Schema is the most powerful option and can handle arbitrarily complex valid
 **What**: Validate field values match regex patterns (email format, phone numbers, etc.).
 
 **When to use**:
+
 - Validate email addresses, URLs, phone numbers
 - Ensure specific formats (e.g., ISO dates, UUIDs)
 - Custom business patterns (e.g., product codes)
 
 **Configuration**:
+
 ```json
 {
   "field_patterns": {
@@ -279,6 +295,7 @@ JSON Schema is the most powerful option and can handle arbitrarily complex valid
 ```
 
 **With flags (case-insensitive)**:
+
 ```json
 {
   "field_patterns": {
@@ -291,6 +308,7 @@ JSON Schema is the most powerful option and can handle arbitrarily complex valid
 ```
 
 **Pattern match logic**:
+
 - `pattern_match_logic: "all"` (default): ALL patterns must match
 - `pattern_match_logic: "any"`: At least ONE pattern must match
 
@@ -301,12 +319,14 @@ JSON Schema is the most powerful option and can handle arbitrarily complex valid
 **What**: Comprehensive validation using JSON Schema (Draft 7+).
 
 **When to use**:
+
 - Complex nested structures
 - Array validation (validate each item)
 - Cross-field dependencies
 - When you're familiar with JSON Schema
 
 **Configuration**:
+
 ```json
 {
   "json_schema": {
@@ -449,6 +469,7 @@ One powerful use case for the JSON Validator is enabling **LLM retry loops** whe
 ### Example: Self-Correcting LLM Output
 
 **Initial LLM Response (validation fails):**
+
 ```json
 {
   "user_id": 123,
@@ -458,12 +479,16 @@ One powerful use case for the JSON Validator is enabling **LLM retry loops** whe
 ```
 
 **Validation Error:**
-```
-Type validation failed: user_id: expected string, got integer; age: expected integer, got string
-Constraint validation failed: status: value 'Running' not in allowed values: active, pending, completed
+
+```bash
+Type validation failed: user_id: expected string,
+got integer; age: expected integer, got string
+Constraint validation failed: status: value 'Running'
+not in allowed values: active, pending, completed
 ```
 
 **LLM Retry with Error Feedback (validation passes):**
+
 ```json
 {
   "user_id": "123",
@@ -488,7 +513,8 @@ async def get_validated_llm_response(prompt, max_retries=3):
             return response
 
         # Feed error back to LLM for retry
-        prompt = f"{prompt}\n\nPrevious attempt failed validation:\n{result.message}\n\nPlease fix and try again."
+        prompt = f"{prompt}\n\nPrevious attempt failed
+        validation:\n{result.message}\n\nPlease fix and try again."
 
     raise ValidationError("Max retries exceeded")
 ```
@@ -496,6 +522,7 @@ async def get_validated_llm_response(prompt, max_retries=3):
 > **💡 Understanding the `matched` field**
 >
 > The `matched` field has inverted semantics:
+
 > - `matched=False` → Validation **PASSED** (no validation rule was triggered)
 > - `matched=True` → Validation **FAILED** (a validation rule was triggered)
 >
@@ -550,6 +577,7 @@ For nested objects, arrays, and cross-field dependencies, JSON Schema is more po
 Use multiple validation strategies together (required + types + constraints) for comprehensive validation.
 
 ✅ **Test regex patterns before deployment**
+
 - Use tools like [regex101.com](https://regex101.com) (set to RE2/Google mode)
 - Remember RE2 limitations (no backreferences, lookahead, lookbehind)
 - Keep patterns simple for better performance
@@ -558,11 +586,13 @@ Use multiple validation strategies together (required + types + constraints) for
 Access nested fields with `"user.profile.email"` instead of separate validators.
 
 ✅ **Consider case sensitivity**
+
 - Default enum matching is case-sensitive
 - Set `case_sensitive_enums: false` for flexible matching
 - Use `flags: ["IGNORECASE"]` for case-insensitive patterns
 
 ✅ **Handle null values explicitly**
+
 - Default: `null` in required fields = missing (validation fails)
 - Set `allow_null_required: true` if you need to distinguish between `null` and missing
 - Consider whether `null` should be allowed in your type checks
@@ -612,6 +642,7 @@ Earlier checks happen before later ones. A query blocked by required fields won'
 **Cause:** RE2 regex syntax differences or incorrect JSON escaping.
 
 **Solutions:**
+
 1. Test pattern with RE2 specifically (not standard regex)
 2. Escape backslashes in JSON: `"\\d"` not `"\d"`
 3. Check for unsupported features (backreferences, lookahead)
@@ -665,25 +696,31 @@ Now `"Active"`, `"ACTIVE"`, and `"active"` all match.
 ### Error Messages
 
 **Parse Errors:**
+
 - `"Invalid JSON: Expecting ',' delimiter: line 1 column 15"`
 - `"Input data is None"`
 
 **Schema Validation:**
+
 - `"Schema validation failed: root: 'id' is a required property"`
 - `"Schema validation failed: action: 'invalid' is not one of ['create', 'update', 'delete']"`
 
 **Required Fields:**
+
 - `"Missing required fields: user_id, email"`
 - `"Missing required fields: status (null not allowed)"`
 
 **Type Errors:**
+
 - `"Type validation failed: age: expected integer, got string"`
 
 **Constraint Errors:**
+
 - `"Constraint validation failed: score: value 1.5 above maximum 1.0"`
 - `"Constraint validation failed: status: value 'invalid' not in allowed values: active, pending"`
 
 **Pattern Errors:**
+
 - `"Pattern validation failed: email: pattern did not match"`
 
 ---
@@ -695,6 +732,7 @@ Now `"Active"`, `"ACTIVE"`, and `"active"` all match.
 Limited support for validating individual array elements with field-level options.
 
 **Workaround**: Use JSON Schema for array validation:
+
 ```json
 {
   "json_schema": {
@@ -714,6 +752,7 @@ Limited support for validating individual array elements with field-level option
 ### Regex Limitations (RE2)
 
 RE2 doesn't support all regex features:
+
 - ❌ Backreferences: `(foo|bar)\1`
 - ❌ Lookahead/lookbehind: `(?=foo)`, `(?<=bar)`
 - ✅ Character classes, quantifiers, anchors, groups

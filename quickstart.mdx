@@ -6,13 +6,12 @@ icon: "rocket"
 
 Protect your AI agent in 4 simple steps.
 
-## Prerequisites: 
+## Prerequisites
+
 - **Python 3.12+**
 - **uv** — Fast Python package manager (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - **Docker** — For running PostgreSQL
 - **Node.js 18+** — For the web dashboard (optional)
-
----
 
 ## Step 1: Start the Agent Control Server
 
@@ -38,15 +37,14 @@ make server-run
 
 **Server is now running at `http://localhost:8000`** ✅
 
-> 💡 **Verify it's working:** Open http://localhost:8000/health in your browser - you should see `{"status": "ok"}`
-
----
+> 💡 **Verify it's working:** Open [http://localhost:8000/health](http://localhost:8000/health) in your browser - you should see `{"status": "ok"}`
 
 ## Step 2: (Optional) Start the Web Dashboard
 
 The dashboard provides a UI for managing agents, controls, and viewing analytics. Everything can be done via API/SDK, but the UI is more convenient.
 
 In a separate terminal:
+
 ```bash
 cd ~/path_to_agent-control/
 cd ui
@@ -55,8 +53,6 @@ pnpm dev
 ```
 
 **Dashboard is now running at `http://localhost:4000`** ✅
-
----
 
 ### Step 3: Setup Controls for Your Agent
 
@@ -121,14 +117,13 @@ asyncio.run(setup())
 ```
 
 **In your Agent application directory** (not inside the agent-control repo):
+
 ```bash
 uv venv
 uv .venv/bin/activate
 uv pip install agent-control-sdk
 uv run setup.py
 ```
-
----
 
 ### Step 4: Now, Use in Your Agent
 
@@ -171,8 +166,6 @@ uv run my_agent.py
 
 **🎉 Done!** Your agent now blocks SSN patterns automatically.
 
----
-
 ### What's Happening Under the Hood?
 
 1. Your app calls `chat("test")`
@@ -184,12 +177,11 @@ uv run my_agent.py
 7. SDK raises `ControlViolationError` and blocks the response
 
 **Key Benefits:**
+
 - ✅ Controls are managed **separately** from your code
 - ✅ Update controls **without redeploying** your agent
 - ✅ Same controls can protect **multiple agents**
 - ✅ View analytics and control execution in the dashboard
-
----
 
 ## Next Steps
 

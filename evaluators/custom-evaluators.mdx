@@ -1,0 +1,166 @@
+---
+title: Custom Evaluators
+description: Build, register, and ship custom evaluators for Agent Control.
+---
+
+## Creating Custom Evaluators
+
+Partners and developers can create custom evaluators to extend Agent Control with their own detection capabilities.
+
+## Evaluator Interface
+
+Every evaluator implements the `Evaluator` base class:
+
+```python
+from typing import Any
+
+from agent_control_models import EvaluatorResult
+from agent_control_evaluators import (
+    Evaluator,
+    EvaluatorConfig,
+    EvaluatorMetadata,
+    register_evaluator,
+)
+
+
+class MyEvaluatorConfig(EvaluatorConfig):
+    """Configuration schema for your evaluator."""
+    threshold: float = 0.5
+    custom_option: str = "default"
+
+
+@register_evaluator
+class MyEvaluator(Evaluator[MyEvaluatorConfig]):
+    """Your custom evaluator."""
+
+    metadata = EvaluatorMetadata(
+        name="my-evaluator",
+        version="1.0.0",
+        description="Detects custom patterns using proprietary logic",
+        requires_api_key=True,  # Set to True if you need credentials
+        timeout_ms=5000,
+    )
+    config_model = MyEvaluatorConfig
+
+    def __init__(self, config: MyEvaluatorConfig) -> None:
+        """Initialize with validated configuration."""
+        super().__init__(config)
+        # Set up any clients, load models, etc.
+
+    async def evaluate(self, data: Any) -> EvaluatorResult:
+        """
+        Evaluate the input data.
+        
+        Args:
+            data: The content to evaluate (string, dict, etc.)
+            
+        Returns:
+            EvaluatorResult with:
+              - matched: bool — Did this trigger the control?
+              - confidence: float — How confident (0.0-1.0)?
+              - message: str — Human-readable explanation
+              - metadata: dict — Additional context for logging
+        """
+        # Your detection logic here
+        score = await self._analyze(data)
+        
+        return EvaluatorResult(
+            matched=score > self.config.threshold,
+            confidence=score,
+            message=f"Custom analysis score: {score:.2f}",
+            metadata={
+                "score": score,
+                "threshold": self.config.threshold,
+            }
+        )
+    
+    async def _analyze(self, data: Any) -> float:
+        """Your proprietary analysis logic."""
+        # Call your API, run your model, etc.
+        return 0.0
+```
+
+## Evaluator Registration
+
+Evaluators are discovered automatically via Python entry points. To make your evaluator available:
+
+1. **Create a Python package** with your evaluator class decorated with `@register_evaluator`
+2. **Register as an entry point** in your `pyproject.toml`:
+
+   ```toml
+   [project.entry-points."agent_control.evaluators"]
+   my-evaluator = "my_package.evaluator:MyEvaluator"
+   ```
+
+3. **Install it** in the Agent Control environment
+
+```bash
+# Install your evaluator
+pip install my-custom-evaluator
+
+# It's now available
+```
+
+## Optional Dependencies
+
+If your evaluator has optional dependencies, override `is_available()`:
+
+```python
+try:
+    import optional_dep
+    AVAILABLE = True
+except ImportError:
+    AVAILABLE = False
+
+@register_evaluator
+class MyEvaluator(Evaluator[MyEvaluatorConfig]):
+    @classmethod
+    def is_available(cls) -> bool:
+        return AVAILABLE
+```
+
+When `is_available()` returns `False`, the evaluator is silently skipped during registration.
+
+## Evaluator Best Practices
+
+| Practice | Why |
+|----------|-----|
+| **Use Pydantic for config** | Automatic validation and documentation |
+| **Implement timeouts** | Prevent slow evaluators from blocking agents |
+| **Return confidence scores** | Enable threshold-based filtering |
+| **Include metadata** | Helps with debugging and observability |
+| **Handle errors gracefully** | Respect the `on_error` configuration |
+| **Make API calls async** | Don't block the event loop |
+
+## Example: Third-Party Integration
+
+Here's how a partner might integrate their content moderation API:
+
+```python
+@register_evaluator
+class ContentModerationEvaluator(Evaluator[ContentModerationEvaluatorConfig]):
+    """Integration with Acme Content Moderation API."""
+    
+    metadata = EvaluatorMetadata(
+        name="acme-content-mod",
+        version="1.0.0",
+        description="Acme Inc. content moderation",
+        requires_api_key=True,
+        timeout_ms=3000,
+    )
+    config_model = ContentModerationEvaluatorConfig
+
+    def __init__(self, config: ContentModerationEvaluatorConfig) -> None:
+        super().__init__(config)
+        self.client = AcmeClient(api_key=os.getenv("ACME_API_KEY"))
+
+    async def evaluate(self, data: Any) -> EvaluatorResult:
+        result = await self.client.moderate(str(data))
+        
+        return EvaluatorResult(
+            matched=result.flagged,
+            confidence=result.confidence,
+            message=result.reason,
+            metadata={"categories": result.categories}
+        )
+```

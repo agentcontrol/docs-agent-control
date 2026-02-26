@@ -1,0 +1,32 @@
+---
+title: SDK Overview
+description: Overview of Agent Control SDKs and how to develop them.
+---
+
+This workspace contains all SDK implementations for Agent Control.
+
+## Available SDKs
+
+- **Python SDK** (`sdk/python-sdk`) — Python client for interacting with Agent Control services
+- **TypeScript SDK** (`sdk/typescript-sdk`) — Speakeasy-generated client plus TypeScript wrapper scaffold
+
+## Development
+
+This is a uv workspace. To work with the SDKs:
+
+```bash
+# From the sdk/ directory
+cd sdk/
+
+# Install dependencies
+uv sync
+
+# Run tests
+uv run pytest
+
+# Run linting
+uv run ruff check .
+
+# Run type checking
+uv run mypy .
+```

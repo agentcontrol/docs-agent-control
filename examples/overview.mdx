@@ -11,11 +11,13 @@ The  contains [Agent Control Examples](https://github.com/agentcontrol/agent-con
 ### Prerequisites
 
 1. Start the Agent Control server:
+
    ```bash
    cd server && make run
    ```
 
 2. (Optional) Set environment variables:
+
    ```bash
    export AGENT_CONTROL_URL=http://localhost:8000
    export OPENAI_API_KEY=your_key_here  # For LangGraph examples
@@ -35,7 +37,7 @@ AGENT_CONTROL_URL=http://localhost:8000 npm run start
 
 ### 🚀 Agent Control Demo (`agent_control_demo/`)
 
-Complete examples showing the agent control workflow:
+Complete examples showing the Agent Control workflow:
 
 ```bash
 # 1. Create controls on the server
@@ -50,6 +52,7 @@ uv run python examples/agent_control_demo/update_controls.py --block-ssn
 ```
 
 **Files:**
+
 - `setup_controls.py` - Create and configure controls via SDK
 - `demo_agent.py` - Agent that uses `@control` decorator with server-side policies
 - `update_controls.py` - Dynamically update controls without code changes
@@ -194,11 +197,11 @@ pip install -e sdks/python
 
 ## Resources
 
-- [Main Documentation](../README.md)
-- [SDK Documentation](../sdks/python/README.md)
-- [TypeScript SDK Documentation](../sdks/typescript/README.md)
-- [Server Documentation](../server/README.md)
-- [Models Documentation](../models/README.md)
+- [Main Documentation](/introduction)
+- [SDK Documentation](/sdk/python-sdk)
+- [TypeScript SDK Documentation](/sdk/typescript-sdk)
+- [Server Documentation](/components/server)
+- [Models Documentation](/components/models)
 
 
 <CardGroup cols={2}>
@@ -215,7 +218,7 @@ pip install -e sdks/python
     Using Agent Control alongside CrewAI's guardrails.
   </Card>
 
-  <Card title="Galileo Luna-2" icon="wand-magic-sparkles" href="https://github.com/agentcontrol/agent-control/tree/main/examples/galileo/">
+  <Card title="Galileo Luna-2" icon="wand-magic-sparkles" href="/examples/galileo-luna2">
     AI-powered toxicity detection with Luna-2.
   </Card>
 
