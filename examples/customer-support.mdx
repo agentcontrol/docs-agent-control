@@ -70,37 +70,39 @@ When you open the UI, you'll see the agent with controls already configured.
 
 If you prefer to run services manually:
 
-1. **Start the database** (requires Docker):
+<Steps>
+  <Step title="Start the database (requires Docker)">
+```bash
+cd server
+docker compose up -d
+```
+  </Step>
 
-   ```bash
-   cd server
-   docker compose up -d
-   ```
+  <Step title="Run database migrations">
+```bash
+cd server
+make alembic-upgrade
+```
+  </Step>
 
-2. **Run database migrations**:
+  <Step title="Start the server (Terminal 1)">
+```bash
+cd server
+make run
+```
 
-   ```bash
-   cd server
-   make alembic-upgrade
-   ```
+Server runs at [http://localhost:8000](http://localhost:8000)
+  </Step>
 
-3. **Start the server** (Terminal 1):
+  <Step title="Start the UI (Terminal 2)">
+```bash
+cd ui
+pnpm dev
+```
 
-   ```bash
-   cd server
-   make run
-   ```
-
-  Server runs at [http://localhost:8000](http://localhost:8000)
-
-4. **Start the UI** (Terminal 2):
-
-   ```bash
-   cd ui
-   pnpm dev
-   ```
-
-  UI runs at [http://localhost:4000](http://localhost:4000)
+UI runs at [http://localhost:4000](http://localhost:4000)
+  </Step>
+</Steps>
 
 ## Running the Demo
 
