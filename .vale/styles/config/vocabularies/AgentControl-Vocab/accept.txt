@@ -16,6 +16,7 @@ CTEs
 [D,d]eployment
 DeepEval
 [Dd]ev
+[Ee]nv
 [E,e]num[s]?
 [E,e]valuator[s]?
 [E,e]xfiltration
@@ -30,6 +31,7 @@ LLMs
 [L,l]ookbehind
 Luna
 Makefile
+Mypy
 maxItems
 minItems
 Mintlify
@@ -41,6 +43,7 @@ OpenAI
 [P,p]assthrough
 [P,p]erformant
 PII
+-pii
 Pydantic
 [R,r]egex
 repo
@@ -51,6 +54,9 @@ SDKs
 [S,s]erverless
 (?i)sql
 sqlglot
+snake_case
+camelCase
+llm_inference
 SSN
 SSNs
 [S,s]ubquery
@@ -72,6 +78,8 @@ uv
 venv
 [W,w]alkthrough
 [W,w]alkthroughs
+namespace
+Namespaces
 tenant_id
 db_
 agent_control_demo

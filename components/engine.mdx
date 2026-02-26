@@ -4,29 +4,45 @@ description: Core evaluation logic, control processing, and the evaluator regist
 icon: "engine"
 ---
 
-<Info>
-This page is a work in progress. Full engine documentation is coming soon.
-</Info>
+Core evaluation logic for Agent Control.
 
-## Overview
+## Responsibilities
 
-The Agent Control Engine (`agent-control-engine`) is the core evaluation component. It processes control rules, runs evaluators, and enforces decisions.
+- **Evaluator Discovery**: Auto-discover evaluators via Python entry points
+- **Selector Evaluation**: Extract data from payloads using selector paths
+- **Evaluator Execution**: Run evaluators against selected data
+- **Caching**: Cache evaluator instances for performance
 
-## Key Responsibilities
+## Evaluator Discovery
 
-- **Control matching** — Determines which controls apply to a given step based on scope
-- **Data extraction** — Uses selectors to pull the right data from the payload
-- **Evaluator execution** — Runs the configured evaluator against the selected data
-- **Decision enforcement** — Applies "deny wins" semantics across all matching controls
-- **Observability** — Logs execution stats, matches, and errors
+The engine provides the public API for evaluator discovery:
 
-## Evaluator Registry
+```python
+from agent_control_engine import discover_evaluators, list_evaluators
 
-The engine discovers evaluators via Python entry points:
+# Discover all evaluators (runs once, safe to call multiple times)
+discover_evaluators()
 
-```toml
-[project.entry-points."agent_control.evaluators"]
-my-evaluator = "my_package.evaluator:MyEvaluator"
+# Get all available evaluators
+evaluators = list_evaluators()  # Returns dict[str, EvaluatorClass]
+
+# Access a specific evaluator
+regex_evaluator = evaluators.get("regex")
 ```
 
-See the [Evaluator Overview](/evaluators/overview#custom-evaluators) for how to build custom evaluators.
+Evaluators are discovered via the `agent_control.evaluators` entry point group. Discovery:
+
+1. Scans all installed packages for the entry point
+2. Loads each evaluator class
+3. Checks `is_available()` to verify dependencies
+4. Registers available evaluators
+
+## Key Functions
+
+| Function | Description |
+|----------|-------------|
+| `discover_evaluators()` | Scan entry points and register evaluators |
+| `list_evaluators()` | Get all registered evaluators (triggers discovery) |
+| `ensure_evaluators_discovered()` | Ensure discovery has run |
+| `get_evaluator_instance(config)` | Get cached evaluator instance |
+| `evaluate_control(control, payload)` | Evaluate a single control |

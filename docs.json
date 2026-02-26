@@ -1,6 +1,10 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "aspen",
+  "appearance": {
+    "default": "dark",
+    "strict": true
+  },
   "name": "Agent Control Docs",
   "colors": {
     "primary": "#E35454",
@@ -22,7 +26,15 @@
             "pages": [
               "introduction",
               "quickstart",
-              "concepts",
+              {
+                "group": "Concepts",
+                "pages": [
+                  "concepts",
+                  "concepts/controls",
+                  "concepts/defining-controls",
+                  "concepts/policy"
+                ]
+              },
               "architecture",
               "configuration"
             ]
@@ -31,29 +43,36 @@
             "group": "Evaluators",
             "pages": [
               "evaluators/overview",
-              "evaluators/json",
-              "evaluators/sql"
+              {
+                "group": "Evaluators",
+                "pages": [
+                  "evaluators/built-in-evaluators",
+                  "evaluators/custom-evaluators"
+                ]
+              },
+              {
+                "group": "Examples",
+                "pages": [
+                  "evaluators/json",
+                  "evaluators/sql"
+                ]
+              }
             ]
           },
           {
             "group": "Components",
             "pages": [
-              "components/sdk",
               "components/server",
               "components/engine",
-              "components/dashboard"
+              "components/models"
             ]
           },
           {
-            "group": "Examples",
+            "group": "SDKs",
             "pages": [
-              "examples/overview",
-              "examples/agent-control-demo",
-              "examples/crewai",
-              "examples/customer-support",
-              "examples/deepeval",
-              "examples/galileo-luna2" ,
-              "examples/langchain-sql"
+              "sdk/overview",
+              "sdk/python-sdk",
+              "sdk/typescript-sdk"
             ]
           },
           {
@@ -62,6 +81,24 @@
               "observability",
               "reference",
               "testing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "icon": "flask",
+        "groups": [
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/overview",
+              "examples/agent-control-demo",
+              "examples/crewai",
+              "examples/customer-support",
+              "examples/deepeval",
+              "examples/galileo-luna2",
+              "examples/langchain-sql"
             ]
           }
         ]

@@ -34,31 +34,36 @@ flowchart TD
 
 | Package | Description |
 |:--------|:------------|
-| [`agent-control-sdk`](/components/sdk) | Python SDK with `@control()` decorator |
+| [`agent-control-sdk`](/sdk/python-sdk) | Python SDK with `@control()` decorator |
 | [`agent-control-server`](/components/server) | FastAPI server with Control Management API |
 | [`agent-control-engine`](/components/engine) | Core evaluation logic and evaluator system |
 | `agent-control-models` | Shared Pydantic v2 models |
 | `agent-control-evaluators` | Built-in evaluators |
-| [`ui`](/components/dashboard) | Next.js web dashboard |
+| [`ui`](components/dashboard.mdx) | Next.js web dashboard |
 
 ### User Application Layer
+
 - **Your AI Agent Application** — Any Python application using AI agents (LangChain, CrewAI, custom, etc.)
 - **Agent Control SDK** — Python package with `@control()` decorator for protecting functions
 
 ### Server Layer
+
 - **REST API Server** — FastAPI-based server exposing control management endpoints
 - **Authentication** — Optional API key authentication for production deployments
 
 ### Processing Layer
+
 - **Control Engine** — Core evaluation engine that processes control rules and evaluates data
 - **Evaluator Registry** — Plugin system for discovering and loading evaluators via entry points
 
 ### Evaluator Ecosystem
+
 - **Built-in Evaluators** — Out-of-the-box evaluators (regex, list matching, JSON validation, SQL injection detection)
 - **Luna-2 Evaluator** — AI-powered detection using Galileo's Luna-2 API
 - **Custom Evaluators** — User-defined evaluators extending the base `Evaluator` class
 
 ### Data Layer
+
 - **PostgreSQL** — Persistent storage for controls, agents, and observability data
 - **Shared Models** — Pydantic v2 models shared across all components
 
@@ -112,7 +117,7 @@ sequenceDiagram
 
 ## Directory Structure
 
-```
+```bash
 agent-control/
 ├── sdks/python/     # Python SDK (agent-control-sdk)
 ├── server/          # FastAPI server (agent-control-server)

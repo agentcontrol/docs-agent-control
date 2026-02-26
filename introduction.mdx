@@ -6,14 +6,30 @@ icon: "house"
 
 **Agent Control** provides a policy-based control layer that sits between your AI agents and the outside world. It evaluates inputs and outputs against configurable rules, blocking harmful content, prompt injections, PII leakage, and other risks — all without changing your agent's code.
 
+## Why Agent Control?
+
+AI agents are powerful but unpredictable. They can:
+
+- Generate toxic or harmful content
+- Be manipulated via prompt injection attacks
+- Leak sensitive information (PII, secrets)
+- Hallucinate incorrect facts
+- Execute unintended actions
+
+**Agent Control gives you runtime control over what your agents can do.**
+
 ![Agent Control Architecture](/images/Architecture.png)
 
 ## Get started
 
 <CardGroup cols={2}>
 
-  <Card title="Quickstart" icon="rocket" href="/quickstart">
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
     Install, run, and protect your first agent in minutes.
+  </Card>
+
+  <Card title="Examples" icon="flask" href="/examples/overview">
+    Real-world use cases and end-to-end integrations.
   </Card>
 
   <Card title="Concepts" icon="lightbulb" href="/concepts">
@@ -24,70 +40,5 @@ icon: "house"
     Component overview, data flow, and system design.
   </Card>
 
-  <Card title="Configuration" icon="gear" href="/configuration">
-    Environment variables, server settings, and authentication.
-  </Card>
-
 </CardGroup>
 
-## Evaluators
-
-<CardGroup cols={2}>
-
-  <Card title="Evaluator Overview" icon="shield-check" href="/evaluators/overview">
-    Built-in evaluators, custom evaluators, and the plugin system.
-  </Card>
-
-  <Card title="JSON Evaluator" icon="brackets-curly" href="/evaluators/json">
-    Validate JSON structure, types, and constraints in LLM outputs.
-  </Card>
-
-  <Card title="SQL Evaluator" icon="database" href="/evaluators/sql">
-    Validate and restrict SQL queries before execution.
-  </Card>
-
-</CardGroup>
-
-## Components
-
-<CardGroup cols={2}>
-
-  <Card title="Python SDK" icon="python" href="/components/sdk">
-    `@control()` decorator, initialization, and error handling.
-  </Card>
-
-  <Card title="Server" icon="server" href="/components/server">
-    FastAPI server, REST API, and control management.
-  </Card>
-
-  <Card title="Engine" icon="engine" href="/components/engine">
-    Core evaluation logic and evaluator registry.
-  </Card>
-
-  <Card title="Dashboard" icon="browser" href="/components/dashboard">
-    Next.js web UI for managing agents and controls.
-  </Card>
-
-</CardGroup>
-
-## More
-
-<CardGroup cols={2}>
-
-  <Card title="Examples" icon="code" href="/examples/overview">
-    Working code examples and integration patterns.
-  </Card>
-
-  <Card title="Observability" icon="chart-line" href="/observability">
-    Real-time monitoring and analytics for control executions.
-  </Card>
-
-  <Card title="Reference" icon="book" href="/reference">
-    SDK API, server endpoints, and troubleshooting.
-  </Card>
-
-  <Card title="Testing Guide" icon="flask-vial" href="/testing">
-    Testing conventions and best practices.
-  </Card>
-
-</CardGroup>
