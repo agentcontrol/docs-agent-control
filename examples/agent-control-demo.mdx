@@ -10,6 +10,7 @@ Protect your AI agent in 4 steps: start the server → run the demo once → add
 Python 3.12+
 
 uv — fast Python package manager
+
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
@@ -19,7 +20,7 @@ Docker — for running PostgreSQL
 Node.js 18+ — only if you want the web dashboard (optional)
 
 <Steps>
-       <Step title="Start the Agent Control server">
+<Step title="Start the Agent Control server">
 The server stores policies/controls and evaluates agent operations for safety.
 
 ```bash
@@ -42,12 +43,12 @@ make server-alembic-upgrade
 make server-run
 ```
 
-✅ Server runs at http://localhost:8000
+✅ Server runs at [http://localhost:8000](http://localhost:8000)
 
-Verify it’s up: open http://localhost:8000/health and confirm you see {"status": "ok"}.
-       </Step>
+Verify it’s up: open [http://localhost:8000/health](http://localhost:8000/health) and confirm you see `{"status": "ok"}`.
+</Step>
 
-       <Step title="Run the demo agent (no server-side controls yet)">
+<Step title="Run the demo agent (no server-side controls yet)">
 This demo agent includes @control() decorators and runs a set of test scenarios.
 
 ```bash
@@ -55,9 +56,9 @@ uv run python examples/agent_control_demo/demo_agent.py
 ```
 
 At this point you may see a message like “No controls returned from server”. That’s expected until you add controls.
-       </Step>
+</Step>
 
-       <Step title="Start the web dashboard (optional)">
+<Step title="Start the web dashboard (optional)">
 If you want to see controls in the UI, start the dashboard in a separate terminal:
 
 ```bash
@@ -66,14 +67,14 @@ pnpm install
 pnpm dev
 ```
 
-✅ Dashboard runs at http://localhost:4000
+✅ Dashboard runs at [http://localhost:4000](http://localhost:4000)
 
 If you open the UI now, you won’t see any controls yet—those are created in the next step.
 
 ![Dashboard with no controls yet](./no-controls-at-startup.png)
-       </Step>
+</Step>
 
-       <Step title="Add controls + policy (server-side)">
+<Step title="Add controls + policy (server-side)">
 Run the included setup script to:
 
 - Register the demo agent (demo-chatbot)
@@ -87,9 +88,9 @@ uv run python examples/agent_control_demo/setup_controls.py
 ```
 
 You should see output confirming control creation, policy creation, and assignment to the agent.
-       </Step>
+</Step>
 
-       <Step title="Rerun the demo agent (controls loaded from the server)">
+<Step title="Rerun the demo agent (controls loaded from the server)">
 Run the demo again. This time it should load controls from the server and block unsafe behavior.
 
 ```bash
@@ -107,7 +108,7 @@ With controls loaded, the UI will show the configured controls and their monitor
 ![Controls added in the UI](./controls-added.png)
 
 ![Control monitoring dashboard](./monitor-controls.png)
-       </Step>
+</Step>
 </Steps>
 
 ## Optional: Update Controls and Rerun
