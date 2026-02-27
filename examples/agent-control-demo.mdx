@@ -1,164 +1,126 @@
 ---
 title: Agent Control Demo
-description: End-to-end demo showing control setup, agent protection, and live control updates — no redeployment needed.
+description: Start Agent Control, add server-side controls, and rerun the demo to see blocks in action.
 ---
 
-## Overview
-
-This example is a self-contained demo that walks through the full Agent Control lifecycle:
-
-1. **Setup controls** — Create regex and list-based controls on the server
-2. **Run a protected agent** — See controls block dangerous inputs and PII in outputs
-3. **Update controls live** — Toggle controls on/off without redeploying the agent
-
-It uses a simulated LLM backend so you can run it **without an API key**.
-
-<Info>
-  To run this example yourself, visit the full source on GitHub:
-  [agent_control_demo](https://github.com/agentcontrol/agent-control/tree/main/examples/agent_control_demo)
-</Info>
+Protect your AI agent in 4 steps: start the server → run the demo once → add controls → rerun to verify blocking.
 
 ## Prerequisites
 
-### 1. Start the Agent Control Server
+Python 3.12+
+
+uv — fast Python package manager
 
 ```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Docker — for running PostgreSQL
+
+Node.js 18+ — only if you want the web dashboard (optional)
+
+<Steps>
+<Step title="Start the Agent Control server">
+The server stores policies/controls and evaluates agent operations for safety.
+
+```bash
+# Clone the repository (contains the server and examples)
+git clone https://github.com/agentcontrol/agent-control.git
+cd agent-control
+
+# Install dependencies (creates/uses the repo environment)
+make sync
+
+# Start PostgreSQL database
 cd server
-make run
+docker-compose up -d
+cd ..
+
+# Run database migrations
+make server-alembic-upgrade
+
+# Start the Agent Control server
+make server-run
 ```
 
-### 2. Install Dependencies
+✅ Server runs at [http://localhost:8000](http://localhost:8000)
+
+Verify it’s up: open [http://localhost:8000/health](http://localhost:8000/health) and confirm you see `{"status": "ok"}`.
+</Step>
+
+<Step title="Run the demo agent (no server-side controls yet)">
+This demo agent includes @control() decorators and runs a set of test scenarios.
 
 ```bash
-cd examples/agent_control_demo
-uv sync
+uv run python examples/agent_control_demo/demo_agent.py
 ```
 
-## Step 1: Setup Controls
+At this point you may see a message like “No controls returned from server”. That’s expected until you add controls.
+</Step>
 
-Run the setup script to create an agent, controls, a policy, and wire them together:
+<Step title="Start the web dashboard (optional)">
+If you want to see controls in the UI, start the dashboard in a separate terminal:
 
 ```bash
-uv run python setup_controls.py
+cd ui
+pnpm install
+pnpm dev
 ```
 
-This creates:
+✅ Dashboard runs at [http://localhost:4000](http://localhost:4000)
 
-| Control               | Type  | Stage | Selector | Description                                  |
-| --------------------- | ----- | ----- | -------- | -------------------------------------------- |
-| `block-ssn-output`    | Regex | post  | output   | Blocks SSN patterns (e.g. `123-45-6789`) in responses |
-| `block-dangerous-sql` | List  | pre   | input    | Blocks dangerous SQL keywords (`DROP`, `DELETE`, `TRUNCATE`, etc.) before execution |
+If you open the UI now, you won’t see any controls yet—those are created in the next step.
 
-And assigns them to a **demo-policy** on the **demo-chatbot** agent.
+![Dashboard with no controls yet](./no-controls-at-startup.png)
+</Step>
 
-### How setup works
+<Step title="Add controls + policy (server-side)">
+Run the included setup script to:
 
-```python
-# 1. Create the agent
-agent_uuid = await create_agent(client)
-
-# 2. Create controls
-regex_control_id = await create_regex_control(client)   # block-ssn-output
-list_control_id = await create_list_control(client)     # block-dangerous-sql
-
-# 3. Create a policy and attach the controls
-policy_id = await create_policy(client, "demo-policy")
-await add_control_to_policy(client, policy_id, regex_control_id)
-await add_control_to_policy(client, policy_id, list_control_id)
-
-# 4. Assign the policy to the agent
-await assign_policy_to_agent(client, agent_uuid, policy_id)
-```
-
-## Step 2: Run the Demo Agent
+- Register the demo agent (demo-chatbot)
+- Create two controls:
+       - block-ssn-output (regex) — blocks SSNs in output (post stage)
+       - block-dangerous-sql (list) — blocks dangerous SQL keywords in input (pre stage)
+- Create a policy (demo-policy) and assign it to the demo agent
 
 ```bash
-uv run python demo_agent.py
+uv run python examples/agent_control_demo/setup_controls.py
 ```
 
-The demo agent runs several test scenarios using the `@control` decorator:
+You should see output confirming control creation, policy creation, and assignment to the agent.
+</Step>
 
-### Protected functions
-
-```python
-@control(policy="demo-policy")
-async def chat(message: str) -> str:
-    """Chat function — OUTPUT is checked for SSN patterns."""
-    response = simulate_llm_response(message)
-    return response
-
-@control(policy="demo-policy")
-async def execute_query(query: str) -> str:
-    """Database query — INPUT is checked for dangerous SQL."""
-    result = simulate_database_query(query)
-    return result
-```
-
-### Expected results
-
-| Scenario                     | Input                                 | Result    | Reason                          |
-| ---------------------------- | ------------------------------------- | --------- | ------------------------------- |
-| Safe chat                    | `"Hello, how can you help me?"`       | ✅ Passes  |                                 |
-| Chat leaking SSN             | `"Tell me the user info"`             | 🚫 Blocked | Response contains SSN pattern   |
-| Safe SQL query               | `"SELECT * FROM users WHERE id = 123"`| ✅ Passes  |                                 |
-| `DROP TABLE`                 | `"DROP TABLE users"`                  | 🚫 Blocked | Dangerous SQL keyword in input  |
-| `DELETE` statement           | `"DELETE FROM users WHERE 1=1"`       | 🚫 Blocked | Dangerous SQL keyword in input  |
-
-## Step 3: Update Controls Live
-
-Toggle the SSN control **without restarting the agent**:
+<Step title="Rerun the demo agent (controls loaded from the server)">
+Run the demo again. This time it should load controls from the server and block unsafe behavior.
 
 ```bash
-# Allow SSNs (disable the control)
-uv run python update_controls.py --allow-ssn
-
-# Block SSNs again (re-enable the control)
-uv run python update_controls.py --block-ssn
-
-# Check current status
-uv run python update_controls.py --status
+uv run python examples/agent_control_demo/demo_agent.py
 ```
 
-Then re-run the demo agent to see the changed behavior:
+✅ Expected behavior on rerun:
+
+- Safe requests pass through
+- 🚫 Dangerous SQL (e.g., DROP TABLE, DELETE FROM …) is blocked before execution (pre)
+- 🚫 SSNs in the response are blocked after execution (post)
+
+With controls loaded, the UI will show the configured controls and their monitoring view:
+
+![Controls added in the UI](./controls-added.png)
+
+![Control monitoring dashboard](./monitor-controls.png)
+</Step>
+</Steps>
+
+## Optional: Update Controls and Rerun
+
+To modify the demo controls (for example, add more blocked SQL keywords), run:
 
 ```bash
-uv run python demo_agent.py
+uv run python examples/agent_control_demo/update_controls.py
 ```
 
-> **💡 Key takeaway:** Controls are managed server-side. You can update thresholds, patterns, and enabled/disabled state without touching your agent code.
-
-## How It Works
+Then rerun the demo agent to see the updated control behavior:
 
 ```bash
-setup_controls.py          demo_agent.py
-─────────────────          ────────────────
-Create Agent        ──►    agent_control.init()
-Create Controls                  │
-Create Policy                    ▼
-Assign Policy        ◄──  @control(policy="demo-policy")
-                                 │
-                          ┌──────┴──────┐
-                          │  pre stage  │ ── Check INPUT (SQL keywords)
-                          └──────┬──────┘
-                                 │
-                          [Execute function]
-                                 │
-                          ┌──────┴──────┐
-                          │ post stage  │ ── Check OUTPUT (SSN pattern)
-                          └──────┬──────┘
-                                 │
-                          Return or raise
-                          ControlViolationError
+uv run python examples/agent_control_demo/demo_agent.py
 ```
-
-## Files
-
-| File                  | Description                                          |
-| --------------------- | ---------------------------------------------------- |
-| `setup_controls.py`   | Creates agent, controls, policy, and wires them together |
-| `demo_agent.py`       | Runs the protected agent with test scenarios          |
-| `update_controls.py`  | Toggles controls on/off to demonstrate live updates   |
-
-## Source Code
-
-See the full example on GitHub: [agent_control_demo](https://github.com/agentcontrol/agent-control/tree/main/examples/agent_control_demo)
