@@ -55,16 +55,6 @@
             ]
           },
           {
-            "group": "Evaluators (Reference)",
-            "pages": [
-              "evaluators/overview",
-              "evaluators/built-in-evaluators",
-              "evaluators/custom-evaluators",
-              "evaluators/json",
-              "evaluators/sql"
-            ]
-          },
-          {
             "group": "SDKs",
             "pages": [
               "sdk/overview",
