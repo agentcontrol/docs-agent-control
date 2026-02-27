@@ -25,46 +25,43 @@
             "group": "Getting Started",
             "pages": [
               "introduction",
-              "quickstart",
-              {
-                "group": "Concepts",
-                "pages": [
-                  "concepts",
-                  "concepts/controls",
-                  "concepts/defining-controls",
-                  "concepts/policy"
-                ]
-              },
-              "architecture",
-              "configuration"
+              "quickstart"
             ]
           },
           {
-            "group": "Evaluators",
+            "group": "Concepts",
             "pages": [
-              "evaluators/overview",
+              "concepts",
+              "concepts/architecture",
+              "concepts/controls",
+              "concepts/defining-controls",
+              "concepts/policy",
               {
                 "group": "Evaluators",
                 "pages": [
-                  "evaluators/built-in-evaluators",
-                  "evaluators/custom-evaluators"
-                ]
-              },
-              {
-                "group": "Examples",
-                "pages": [
-                  "evaluators/json",
-                  "evaluators/sql"
+                  "concepts/evaluators/overview",
+                  "concepts/evaluators/built-in-evaluators",
+                  "concepts/evaluators/custom-evaluators",
+                  "concepts/evaluators/json",
+                  "concepts/evaluators/sql"
                 ]
               }
             ]
           },
           {
-            "group": "Components",
+            "group": "Architecture",
             "pages": [
-              "components/server",
-              "components/engine",
-              "components/models"
+              "architecture"
+            ]
+          },
+          {
+            "group": "Evaluators (Reference)",
+            "pages": [
+              "evaluators/overview",
+              "evaluators/built-in-evaluators",
+              "evaluators/custom-evaluators",
+              "evaluators/json",
+              "evaluators/sql"
             ]
           },
           {
@@ -78,9 +75,9 @@
           {
             "group": "More",
             "pages": [
-              "observability",
               "reference",
-              "testing"
+              "testing",
+              "configuration"
             ]
           }
         ]
@@ -98,7 +95,8 @@
               "examples/customer-support",
               "examples/deepeval",
               "examples/galileo-luna2",
-              "examples/langchain-sql"
+              "examples/langchain-sql",
+              "examples/typescript_sdk"
             ]
           }
         ]

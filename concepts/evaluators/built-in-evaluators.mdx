@@ -1,0 +1,201 @@
+---
+title: Built-in Evaluators
+description: Built-in evaluator reference and configuration examples.
+---
+
+Agent Control includes powerful evaluators out of the box.
+
+## Built-in Evaluators
+
+| Evaluator | Name | Description |
+|-----------|------|-------------|
+| [Regex](#regex-evaluator) | `regex` | Pattern matching using Google RE2 (safe from ReDoS) |
+| [List](#list-evaluator) | `list` | Flexible keyword/value matching |
+| [Luna-2](#luna-2-evaluator) | `galileo.luna2` | AI-powered detection via Galileo |
+| [JSON](/concepts/evaluators/json) | `json` | JSON structure, type, and constraint validation |
+| [SQL](/concepts/evaluators/sql) | `sql` | SQL query validation and restriction |
+
+---
+
+## Regex Evaluator
+
+Pattern matching using Google RE2 (safe from ReDoS attacks).
+
+**Evaluator name:** `regex`
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `pattern` | string | Yes | Regular expression pattern (RE2 syntax) |
+| `flags` | list | No | Optional: `["IGNORECASE"]` |
+
+<Accordion title="Examples">
+
+```json
+// Block Social Security Numbers
+{
+  "name": "regex",
+  "config": {
+    "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+  }
+}
+
+// Block credit card numbers (case-insensitive)
+{
+  "name": "regex",
+  "config": {
+    "pattern": "card.*\\d{4}[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}",
+    "flags": ["IGNORECASE"]
+  }
+}
+
+// Block AWS access keys
+{
+  "name": "regex",
+  "config": {
+    "pattern": "AKIA[0-9A-Z]{16}"
+  }
+}
+```
+
+</Accordion>
+
+**Use cases:** PII detection (SSN, credit cards, phone numbers), secret scanning (API keys, passwords), pattern-based blocklists.
+
+---
+
+## List Evaluator
+
+Flexible value matching with multiple modes and logic options.
+
+**Evaluator name:** `list`
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `values` | list | required | Values to match against |
+| `logic` | string | `"any"` | `"any"` = match any value, `"all"` = match all |
+| `match_on` | string | `"match"` | `"match"` = trigger when found, `"no_match"` = trigger when NOT found |
+| `match_mode` | string | `"exact"` | `"exact"` = full string match, `"contains"` = word-boundary match |
+| `case_sensitive` | bool | `false` | Case sensitivity |
+
+<Note>
+`match_mode="contains"` uses word-boundary matching, not generic substring matching. For example, `"admin"` will match `"admin user"` but will NOT match `"sysadministrator"`.
+</Note>
+
+<Accordion title="Examples">
+
+```json
+// Block admin/root keywords
+{
+  "name": "list",
+  "config": {
+    "values": ["admin", "root", "sudo", "superuser"],
+    "logic": "any",
+    "match_mode": "contains",
+    "case_sensitive": false
+  }
+}
+
+// Require approval keyword (trigger if NOT found)
+{
+  "name": "list",
+  "config": {
+    "values": ["APPROVED", "VERIFIED"],
+    "match_on": "no_match",
+    "logic": "any"
+  }
+}
+
+// Allowlist: only permit specific tools
+{
+  "name": "list",
+  "config": {
+    "values": ["search", "calculate", "lookup"],
+    "match_on": "no_match"
+  }
+}
+```
+
+</Accordion>
+
+**Use cases:** Keyword blocklists/allowlists, required terms validation, competitor mention detection, tool restriction lists.
+
+---
+
+## Luna-2 Evaluator
+
+AI-powered detection using Galileo's Luna-2 small language models. Provides real-time, low-latency evaluation for complex patterns that can't be caught with regex or lists.
+
+**Evaluator name:** `galileo.luna2`
+
+**Installation:**
+
+```bash
+# Direct install
+pip install agent-control-evaluator-galileo
+
+# Or via convenience extra
+pip install agent-control-evaluators[galileo]
+```
+
+**Requirements:** Set `GALILEO_API_KEY` environment variable where evaluations run.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `metric` | string | — | Metric to evaluate (required if `stage_type="local"`) |
+| `operator` | string | — | `"gt"`, `"lt"`, `"gte"`, `"lte"`, `"eq"` |
+| `target_value` | number | — | Threshold value (0.0–1.0) |
+| `stage_type` | string | `"local"` | `"local"` or `"central"` |
+| `galileo_project` | string | — | Project name for logging |
+| `on_error` | string | `"allow"` | `"allow"` (fail open) or `"deny"` (fail closed) |
+| `timeout_ms` | int | `10000` | Request timeout (1000–60000 ms) |
+
+**Available metrics:**
+
+| Metric | Description |
+|--------|-------------|
+| `input_toxicity` | Toxic/harmful content in user input |
+| `output_toxicity` | Toxic/harmful content in agent response |
+| `input_sexism` | Sexist content in user input |
+| `output_sexism` | Sexist content in agent response |
+| `prompt_injection` | Prompt manipulation attempts |
+| `pii_detection` | Personally identifiable information |
+| `hallucination` | Potentially false or fabricated statements |
+| `tone` | Communication tone analysis |
+
+<Accordion title="Examples">
+
+```json
+// Block toxic inputs (score > 0.5)
+{
+  "name": "galileo.luna2",
+  "config": {
+    "metric": "input_toxicity",
+    "operator": "gt",
+    "target_value": 0.5,
+    "galileo_project": "my-project"
+  }
+}
+
+// Block prompt injection attempts
+{
+  "name": "galileo.luna2",
+  "config": {
+    "metric": "prompt_injection",
+    "operator": "gt",
+    "target_value": 0.7,
+    "on_error": "deny"
+  }
+}
+
+// Flag potential hallucinations (warn but allow)
+{
+  "name": "galileo.luna2",
+  "config": {
+    "metric": "hallucination",
+    "operator": "gt",
+    "target_value": 0.6
+  }
+}
+```
+
+</Accordion>
