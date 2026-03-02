@@ -86,7 +86,6 @@
             "group": "Reference",
             "pages": [
               "reference",
-              "sdk/overview",
               "sdk/python-sdk",
               "sdk/typescript-sdk"
             ]
