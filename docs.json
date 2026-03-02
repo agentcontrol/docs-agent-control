@@ -49,14 +49,9 @@
             ]
           },
           {
-            "group": "Architecture",
+            "group": "Reference",
             "pages": [
-              "architecture"
-            ]
-          },
-          {
-            "group": "SDKs",
-            "pages": [
+              "reference",
               "sdk/overview",
               "sdk/python-sdk",
               "sdk/typescript-sdk"
@@ -65,7 +60,6 @@
           {
             "group": "More",
             "pages": [
-              "reference",
               "testing",
               "configuration"
             ]
