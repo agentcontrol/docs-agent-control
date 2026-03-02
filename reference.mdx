@@ -71,6 +71,79 @@ When API key auth is enabled, include the key in the `X-API-Key` header. For con
 ## Related
 
 - [Testing](/testing)
+- [Configuration](/configuration)---
+title: Reference
+description: SDK and Server API reference for Agent Control.
+icon: "book"
+---
+
+## Overview
+
+This section centralizes the technical reference for Agent Control. For concepts and architecture, head to the [Concepts](/concepts) section.
+
+## SDK Reference
+
+Use the SDK docs for language-specific details, examples, and API surface area.
+
+- [SDK Overview](/sdk/overview)
+- [Python SDK](/sdk/python-sdk)
+- [TypeScript SDK](/sdk/typescript-sdk)
+
+## Server API
+
+The Agent Control server exposes a RESTful API for managing agents, controls, and policies.
+
+### Base URL
+
+Default: `http://localhost:8000/api/v1`
+
+### Authentication
+
+When API key auth is enabled, include the key in the `X-API-Key` header. For configuration details and environment variables, see [Configuration](/configuration).
+
+### Endpoints
+
+**Agents**:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/agents` | List all agents |
+| `POST` | `/agents/initAgent` | Register a new agent |
+| `GET` | `/agents/{agent_id}` | Get agent details |
+| `PATCH` | `/agents/{agent_id}` | Update agent |
+| `GET` | `/agents/{agent_id}/controls` | List controls for agent |
+| `GET` | `/agents/{agent_id}/policy` | Get agent's policy |
+| `POST` | `/agents/{agent_id}/policy/{policy_id}` | Assign policy |
+| `DELETE` | `/agents/{agent_id}/policy` | Remove policy |
+
+**Controls**:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `PUT` | `/controls` | Create control |
+| `GET` | `/controls` | List controls |
+| `GET` | `/controls/{control_id}` | Get control |
+| `PATCH` | `/controls/{control_id}` | Update control |
+| `DELETE` | `/controls/{control_id}` | Delete control |
+
+**Policies**:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `PUT` | `/policies` | Create policy |
+| `GET` | `/policies/{policy_id}/controls` | List controls in policy |
+| `POST` | `/policies/{policy_id}/controls/{control_id}` | Add control to policy |
+| `DELETE` | `/policies/{policy_id}/controls/{control_id}` | Remove control |
+
+**System**:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check (no auth required) |
+
+## Related
+
+- [Testing](/testing)
 - [Configuration](/configuration)# Agent Control Reference
 
 This document provides comprehensive technical reference for Agent Control. Each section is self-contained and can be read independently.
