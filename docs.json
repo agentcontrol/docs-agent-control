@@ -54,7 +54,8 @@
               {
                 "group": "Overview",
                 "pages": [
-                  "examples/overview"
+                  "examples/overview",
+                  "examples/agent-control-demo"
                 ]
               },
               {
@@ -101,6 +102,7 @@
             "group": "Examples",
             "pages": [
               "examples/overview",
+              "examples/agent-control-demo",
               "examples/langchain-sql",
               "examples/aws-strands",
               "examples/crewai",
@@ -120,7 +122,8 @@
           {
             "group": "Overview",
             "pages": [
-              "examples/overview"
+              "examples/overview",
+              "examples/agent-control-demo"
             ]
           },
           {
