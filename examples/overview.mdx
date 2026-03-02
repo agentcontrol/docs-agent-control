@@ -4,224 +4,60 @@ description: Working code examples and integration patterns for Agent Control.
 icon: "code"
 ---
 
-The  contains [Agent Control Examples](https://github.com/agentcontrol/agent-control/tree/main/examples) directory contains examples demonstrating how to use Agent Control in various scenarios.
+Browse working examples that show how to add Agent Control to different frameworks, evaluators, and real-world use cases. Source code for every example lives in the [agent-control/examples](https://github.com/agentcontrol/agent-control/tree/main/examples) directory.
 
-## Quick Start
+## Getting started
 
-### Prerequisites
+<Card title="Agent Control Demo" icon="rocket" href="/examples/agent-control-demo">
+  End-to-end walkthrough — start the server, add controls, and see blocking in action in four steps.
+</Card>
 
-1. Start the Agent Control server:
-
-   ```bash
-   cd server && make run
-   ```
-
-2. (Optional) Set environment variables:
-
-   ```bash
-   export AGENT_CONTROL_URL=http://localhost:8000
-   export OPENAI_API_KEY=your_key_here  # For LangGraph examples
-   ```
-
-## Example Categories
-
-### 🧩 TypeScript SDK (`typescript_sdk/`)
-
-Consumer-style TypeScript example that installs `agent-control` from npm and calls the Agent Control API:
-
-```bash
-cd examples/typescript_sdk
-npm install
-AGENT_CONTROL_URL=http://localhost:8000 npm run start
-```
-
-### 🚀 Agent Control Demo (`agent_control_demo/`)
-
-Complete examples showing the Agent Control workflow:
-
-```bash
-# 1. Create controls on the server
-uv run python examples/agent_control_demo/setup_controls.py
-
-# 2. Run the demo agent with controls
-uv run python examples/agent_control_demo/demo_agent.py
-
-# 3. Update controls dynamically
-uv run python examples/agent_control_demo/update_controls.py --allow-ssn
-uv run python examples/agent_control_demo/update_controls.py --block-ssn
-```
-
-**Files:**
-
-- `setup_controls.py` - Create and configure controls via SDK
-- `demo_agent.py` - Agent that uses `@control` decorator with server-side policies
-- `update_controls.py` - Dynamically update controls without code changes
-- `agent_luna_demo.py` - Luna-2 evaluator integration for AI safety checks
-
-### 💬 Simple Chatbot (`demo_chatbot.py`)
-
-Interactive chatbot demonstrating the `@control` decorator:
-
-```bash
-uv run python examples/demo_chatbot.py
-```
-
-### 🔧 Control Setup (`demo_setup_controls.py`)
-
-Programmatic control setup using SDK models:
-
-```bash
-uv run python examples/demo_setup_controls.py
-```
-
-### 🤖 LangGraph Integration (`langchain/`)
-
-LangGraph examples are available in `examples/langchain`:
-
-```bash
-cd examples/langchain
-uv run langgraph_auto_schema_agent.py
-```
-
-This specific example demonstrates auto-derived step schemas from `@control()`
-decorators, so no explicit `steps=...` list is required in `agent_control.init(...)`.
-
-### 🛡️ Luna-2 Demo (`luna2_demo.py`)
-
-Direct integration with Galileo Protect API:
-
-```bash
-export GALILEO_API_KEY=your_key_here
-uv run python examples/luna2_demo.py
-```
-
-## Common Patterns
-
-### Pattern 1: Using @control Decorator (Server-Side)
-
-```python
-import agent_control
-from agent_control import control, ControlViolationError
-
-# Initialize agent (connects to server, loads policy)
-agent_control.init(
-    agent_name="my-bot",
-    agent_id="550e8400-e29b-41d4-a716-446655440000",
-)
-
-# Apply the agent's assigned policy
-@control()
-async def chat(message: str) -> str:
-    return await assistant.respond(message)
-
-# Handle violations
-try:
-    response = await chat("user input")
-except ControlViolationError as e:
-    print(f"Blocked: {e.message}")
-```
-
-### Pattern 2: Direct SDK Usage
-
-```python
-from agent_control import AgentControlClient
-
-async with AgentControlClient() as client:
-    # Check server health
-    health = await client.health_check()
-    
-    # Make API calls via http_client
-    response = await client.http_client.get("/api/v1/controls")
-```
-
-### Pattern 3: Programmatic Control Setup
-
-```python
-from agent_control import (
-    AgentControlClient,
-    ControlDefinition,
-    ControlSelector,
-    ControlScope,
-    ControlAction,
-    EvaluatorSpec,
-    controls,
-)
-
-async with AgentControlClient() as client:
-    # Create control
-    ctrl = await controls.create_control(client, "block-pii")
-    
-    # Configure control
-    control_data = ControlDefinition(
-        description="Block PII in output",
-        enabled=True,
-        execution="server",
-        scope=ControlScope(step_types=["llm"], stages=["post"]),
-        selector=ControlSelector(path="output"),
-        evaluator=EvaluatorSpec(
-            name="regex",
-            config={"pattern": r"\b\d{3}-\d{2}-\d{4}\b"}
-        ),
-        action=ControlAction(decision="deny")
-    )
-    await controls.set_control_data(client, ctrl["control_id"], control_data)
-```
-
-## Testing Examples
-
-```bash
-# Run from repo root
-cd examples/langgraph/my_agent
-pytest test_agent.py -v
-```
-
-## Troubleshooting
-
-### Server Connection Issues
-
-```bash
-# Check if server is running
-curl http://localhost:8000/health
-# Expected: {"status":"healthy","version":"0.1.0"}
-```
-
-### Import Errors
-
-```bash
-# Install the SDK from workspace root
-make sync
-
-# Or install directly
-pip install -e sdks/python
-```
-
-## Resources
-
-- [Main Documentation](/introduction)
-- [SDK Documentation](/sdk/python-sdk)
-- [TypeScript SDK Documentation](/sdk/typescript-sdk)
+## Integration examples
 
 <CardGroup cols={2}>
 
-  <Card title="Customer Support Agent" icon="headset" href="/examples/customer-support">
-    Full example with multiple tools and safety controls.
-  </Card>
-
   <Card title="LangChain SQL Agent" icon="link" href="/examples/langchain-sql">
-    SQL injection protection with LangChain integration.
+    Protect a LangChain SQL agent from dangerous queries with server-side SQL injection controls.
   </Card>
 
-  <Card title="CrewAI Integration" icon="users" href="/examples/crewai">
-    Using Agent Control alongside CrewAI's guardrails.
+  <Card title="AWS Strands" icon="cloud" href="/examples/aws-strands">
+    Add guardrails to AWS Strands agent workflows and tool calls without changing business logic.
   </Card>
 
-  <Card title="Galileo Luna-2" icon="wand-magic-sparkles" href="/examples/galileo-luna2">
-    AI-powered toxicity detection with Luna-2.
+  <Card title="CrewAI" icon="users" href="/examples/crewai">
+    Layer Agent Control security (PII detection, access blocking) alongside CrewAI's quality guardrails.
+  </Card>
+
+  <Card title="TypeScript SDK" icon="code" href="/examples/typescript_sdk">
+    Consume the published npm package from an external TypeScript app (OpenClaw-compatible).
   </Card>
 
 </CardGroup>
 
-## More Examples
+## External evaluators
 
-- **[TypeScript SDK (npm consumer)](https://github.com/agentcontrol/agent-control/tree/main/examples/typescript_sdk/)** — Monorepo example that installs `agent-control` from npm
-- **[All Examples on GitHub](https://github.com/agentcontrol/agent-control/tree/main/examples)** — Full list of working examples
+<CardGroup cols={2}>
+
+  <Card title="DeepEval GEval" icon="check" href="/examples/deepeval">
+    Build a custom evaluator using DeepEval's LLM-as-a-judge metric for coherence, relevance, and correctness scoring.
+  </Card>
+
+  <Card title="Galileo Luna-2" icon="wand-magic-sparkles" href="/examples/galileo-luna2">
+    Real-time toxicity detection and content moderation with Galileo's Luna-2 Protect service.
+  </Card>
+
+</CardGroup>
+
+## Use case examples
+
+<CardGroup cols={2}>
+
+  <Card title="Customer Support Agent" icon="headset" href="/examples/customer-support">
+    Realistic enterprise scenario with PII protection, prompt-injection defense, and multiple tool types.
+  </Card>
+
+  <Card title="Financial Agent" icon="landmark" href="/examples/financial-agent">
+    SOX- and PII-related runtime controls for onboarding, reporting, and transaction review workflows.
+  </Card>
+
+</CardGroup>

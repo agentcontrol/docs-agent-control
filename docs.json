@@ -49,15 +49,44 @@
             ]
           },
           {
-            "group": "Architecture",
+            "group": "Examples",
             "pages": [
-              "architecture"
+              {
+                "group": "Overview",
+                "pages": [
+                  "examples/overview",
+                  "examples/agent-control-demo"
+                ]
+              },
+              {
+                "group": "Integration examples",
+                "pages": [
+                  "examples/langchain-sql",
+                  "examples/aws-strands",
+                  "examples/crewai",
+                  "examples/typescript_sdk"
+                ]
+              },
+              {
+                "group": "External evaluators",
+                "pages": [
+                  "examples/deepeval",
+                  "examples/galileo-luna2"
+                ]
+              },
+              {
+                "group": "Use case examples",
+                "pages": [
+                  "examples/customer-support",
+                  "examples/financial-agent"
+                ]
+              }
             ]
           },
           {
-            "group": "SDKs",
+            "group": "Reference",
             "pages": [
-              "sdk/overview",
+              "reference",
               "sdk/python-sdk",
               "sdk/typescript-sdk"
             ]
@@ -65,9 +94,23 @@
           {
             "group": "More",
             "pages": [
-              "reference",
               "testing",
               "configuration"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/overview",
+              "examples/agent-control-demo",
+              "examples/langchain-sql",
+              "examples/aws-strands",
+              "examples/crewai",
+              "examples/typescript_sdk",
+              "examples/deepeval",
+              "examples/galileo-luna2",
+              "examples/customer-support",
+              "examples/financial-agent"
             ]
           }
         ]
@@ -77,16 +120,33 @@
         "icon": "flask",
         "groups": [
           {
-            "group": "Examples",
+            "group": "Overview",
             "pages": [
               "examples/overview",
-              "examples/agent-control-demo",
-              "examples/crewai",
-              "examples/customer-support",
-              "examples/deepeval",
-              "examples/galileo-luna2",
+              "examples/agent-control-demo"
+            ]
+          },
+          {
+            "group": "Integration examples",
+            "pages": [
               "examples/langchain-sql",
+              "examples/aws-strands",
+              "examples/crewai",
               "examples/typescript_sdk"
+            ]
+          },
+          {
+            "group": "External evaluators",
+            "pages": [
+              "examples/deepeval",
+              "examples/galileo-luna2"
+            ]
+          },
+          {
+            "group": "Use case examples",
+            "pages": [
+              "examples/customer-support",
+              "examples/financial-agent"
             ]
           }
         ]
