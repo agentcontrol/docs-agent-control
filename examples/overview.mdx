@@ -4,7 +4,7 @@ description: Working code examples and integration patterns for Agent Control.
 icon: "code"
 ---
 
-The  contains [Agent Control Examples](https://github.com/agentcontrol/agent-control/tree/main/examples) directory contains examples demonstrating how to use Agent Control in various scenarios.
+The [Agent Control Examples](https://github.com/agentcontrol/agent-control/tree/main/examples) directory contains examples demonstrating how to use Agent Control in various scenarios.
 
 ## Quick Start
 
@@ -201,22 +201,52 @@ pip install -e sdks/python
 - [SDK Documentation](/sdk/python-sdk)
 - [TypeScript SDK Documentation](/sdk/typescript-sdk)
 
-<CardGroup cols={2}>
+## Integration examples
 
-  <Card title="Customer Support Agent" icon="headset" href="/examples/customer-support">
-    Full example with multiple tools and safety controls.
-  </Card>
+<CardGroup cols={2}>
 
   <Card title="LangChain SQL Agent" icon="link" href="/examples/langchain-sql">
     SQL injection protection with LangChain integration.
+  </Card>
+
+  <Card title="AWS Strands" icon="cloud" href="/examples/aws-strands">
+    Guardrails for AWS Strands workflows and tools.
   </Card>
 
   <Card title="CrewAI Integration" icon="users" href="/examples/crewai">
     Using Agent Control alongside CrewAI's guardrails.
   </Card>
 
+  <Card title="TypeScript / Openclaw" icon="code" href="/examples/typescript_sdk">
+    TypeScript integration using the published npm SDK.
+  </Card>
+
+</CardGroup>
+
+## External evaluators
+
+<CardGroup cols={2}>
+
+  <Card title="DeepEval" icon="check" href="/examples/deepeval">
+    External evaluator integration and scoring workflows.
+  </Card>
+
   <Card title="Galileo Luna-2" icon="wand-magic-sparkles" href="/examples/galileo-luna2">
     AI-powered toxicity detection with Luna-2.
+  </Card>
+
+</CardGroup>
+
+## Use case examples
+
+<CardGroup cols={2}>
+
+  <Card title="Customer Support Agent" icon="headset" href="/examples/customer-support">
+    Full example with multiple tools and safety controls.
+  </Card>
+
+  <Card title="Financial Agent" icon="landmark" href="/examples/financial-agent">
+    Controls tailored for regulated financial workflows.
   </Card>
 
 </CardGroup>
