@@ -4,19 +4,21 @@ description: Runtime guardrails for AI agents — configurable, extensible, and 
 icon: "house"
 ---
 
-**Agent Control** provides a policy-based control layer that sits between your AI agents and the outside world. It evaluates inputs and outputs against configurable rules, blocking harmful content, prompt injections, PII leakage, and other risks — all without changing your agent's code.
+**Agent Control** provides a policy-based control layer that sits between your AI agents and the outside world. It evaluates inputs and outputs against configurable rules, blocking harmful content, prompt injections, PII leakage, and other risks — all without changing your agent's code. It's fully open source at [github.com/agentcontrol/agent-control](https://github.com/agentcontrol/agent-control).
 
-## Why Agent Control?
+## Why Do You Need It?
 
-AI agents are powerful but unpredictable. They can:
+Traditional guardrails embedded inside your agent code have critical limitations:
 
-- Generate toxic or harmful content
-- Be manipulated via prompt injection attacks
-- Leak sensitive information (PII, secrets)
-- Hallucinate incorrect facts
-- Execute unintended actions
+- **Scattered Logic:** Control code is buried across your agent codebase, making it hard to audit or update
+- **Deployment Overhead:** Changing protection rules requires code changes and redeployment
+- **Limited Adaptability:** Hardcoded checks can't adapt to new attack patterns or production data variations
 
-**Agent Control gives you runtime control over what your agents can do.**
+**Agent Control gives you runtime control over what your agents can and cannot do:**
+
+- **For developers:** Centralize safety logic and adapt to emerging threats instantly without redeployment
+- **For non-technical teams:** Intuitive UI to configure and monitor agent safety without touching code
+- **For organizations:** Reusable policies across agents with comprehensive audit trails
 
 ![Agent Control Architecture](/images/Architecture.png)
 
