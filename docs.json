@@ -35,15 +35,19 @@
               "concepts/architecture",
               "concepts/controls",
               "concepts/defining-controls",
-              "concepts/policy",
               {
                 "group": "Evaluators",
                 "pages": [
                   "concepts/evaluators/overview",
-                  "concepts/evaluators/built-in-evaluators",
-                  "concepts/evaluators/custom-evaluators",
-                  "concepts/evaluators/json",
-                  "concepts/evaluators/sql"
+                  {
+                    "group": "Built-in evaluators",
+                    "pages": [
+                      "concepts/evaluators/built-in-evaluators",
+                      "concepts/evaluators/json",
+                      "concepts/evaluators/sql"
+                    ]
+                  },
+                  "concepts/evaluators/custom-evaluators"
                 ]
               }
             ]
@@ -96,21 +100,6 @@
             "pages": [
               "testing",
               "configuration"
-            ]
-          },
-          {
-            "group": "Examples",
-            "pages": [
-              "examples/overview",
-              "examples/agent-control-demo",
-              "examples/langchain-sql",
-              "examples/aws-strands",
-              "examples/crewai",
-              "examples/typescript_sdk",
-              "examples/deepeval",
-              "examples/galileo-luna2",
-              "examples/customer-support",
-              "examples/financial-agent"
             ]
           }
         ]
