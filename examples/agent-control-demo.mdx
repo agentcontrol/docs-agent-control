@@ -69,9 +69,11 @@ pnpm dev
 
 ✅ Dashboard runs at [http://localhost:4000](http://localhost:4000)
 
-If you open the UI now, you won’t see any controls yet—those are created in the next step.
+If you open the UI now, you won't see any controls yet—those are created in the next step.
 
 ![Dashboard with no controls yet](./no-controls-at-startup.png)
+
+The dashboard starts with an empty state because no controls or policies have been registered with the server yet. Once you add controls in the next step, they appear here automatically.
 </Step>
 
 <Step title="Add controls + policy (server-side)">
@@ -107,7 +109,11 @@ With controls loaded, the UI will show the configured controls and their monitor
 
 ![Controls added in the UI](./controls-added.png)
 
+The controls list view displays each registered control with its name, evaluation stage (`pre` or `post`), evaluator type, and the policy it belongs to. In this demo, you should see `block-ssn-output` (post stage, regex evaluator) and `block-dangerous-sql` (pre stage, list evaluator), both assigned to `demo-policy`.
+
 ![Control monitoring dashboard](./monitor-controls.png)
+
+The monitoring dashboard shows real-time activity for each control — including how many requests were evaluated, how many were blocked, and the pass/block ratio. Use this view to verify that dangerous SQL queries and SSN-containing responses are being caught as expected.
 </Step>
 </Steps>
 

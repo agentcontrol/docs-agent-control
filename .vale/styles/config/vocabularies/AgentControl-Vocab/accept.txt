@@ -47,6 +47,7 @@ OpenClaw
 [P,p]erformant
 PII
 -pii
+pnpm
 Pydantic
 [R,r]egex
 repo
