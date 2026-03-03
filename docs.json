@@ -54,6 +54,12 @@
             ]
           },
           {
+            "group": "How-to Guides",
+            "pages": [
+              "how-to/decorate-llm-tool-calls"
+            ]
+          },
+          {
             "group": "Examples",
             "pages": [
               {
