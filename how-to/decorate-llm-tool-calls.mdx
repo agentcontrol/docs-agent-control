@@ -5,11 +5,11 @@ description: Learn how to decorate LLM tool calls with Agent Control.
 
 Add `@control()` to any function to enforce server-managed safety controls on its inputs and outputs. This guide walks you through:
 
-- Setting up your environment. 
+- Setting up your environment.
 - Creating two agent controls--`block-ssn-output` and `block-dangerous-sql`--
-to block social security numbers and dangerous SQL queries, respectively. 
-- Decorating an LLM call that asks "What is the capital of France?" and "DROP TABLE users". 
-- Succesfully returning the answer to the former and succesfully blocking the potentially dangerous SQL injection. 
+to block social security numbers and dangerous SQL queries, respectively.
+- Decorating an LLM call that asks "What is the capital of France?" and "DROP TABLE users".
+- Returning the answer to the former and blocking the potentially dangerous SQL injection.
 
 ## Prerequisites
 
