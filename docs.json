@@ -25,7 +25,8 @@
             "group": "Getting Started",
             "pages": [
               "introduction",
-              "quickstart"
+              "quickstart",
+              "ui-quickstart"
             ]
           },
           {

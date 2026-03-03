@@ -1,0 +1,138 @@
+---
+title: UI Quickstart
+description: Launch the Agent Control dashboard to manage controls, policies, and monitoring from your browser.
+icon: "browser"
+---
+
+The Agent Control dashboard lets you manage [controls](/concepts/controls), assign [policies](/concepts/policy), and monitor agent activity — no code changes required.
+
+## Prerequisites
+
+Before starting the UI, make sure the **Agent Control server** is already running. If you haven't set it up yet, follow the [Quickstart](/quickstart) first.
+
+You also need:
+
+- **Node.js 18+**
+- **pnpm** — Fast Node.js package manager (`npm install -g pnpm`)
+
+## Start the UI Server
+
+<Steps>
+<Step title="Install and start the dashboard">
+From the root of the `agent-control` repository, run the following commands in a **separate terminal**:
+
+```bash
+cd ui
+pnpm install
+pnpm dev
+```
+
+The dashboard is now running at [http://localhost:4000](http://localhost:4000).
+
+<Tip>
+Keep the Agent Control server (`make server-run`) and the UI (`pnpm dev`) running in separate terminal windows. The dashboard communicates with the server at `http://localhost:8000` by default.
+</Tip>
+</Step>
+
+<Step title="Verify the dashboard is running">
+Open [http://localhost:4000](http://localhost:4000). You should see an empty state — this is expected before any controls or policies are registered.
+
+![Dashboard with no controls at startup](/images/no-controls-at-startup.png)
+
+The dashboard reflects the server's current configuration. Controls appear here automatically once you create them.
+</Step>
+</Steps>
+
+## Creating Controls from the UI
+
+You can create controls directly in the dashboard — no scripts or SDK code required.
+
+<Steps>
+<Step title="Add a new control">
+Click the **Add Control** button from the controls page to start creating a new control.
+
+![Add a new control](/images/add-control.png)
+</Step>
+
+<Step title="Select the control type">
+Choose an [evaluator](/concepts/evaluators/overview) type for your control. Options include [Regex](/concepts/evaluators/built-in-evaluators), List, [JSON](/concepts/evaluators/json), [SQL](/concepts/evaluators/sql), and [AI-powered](/concepts/evaluators/custom-evaluators) evaluators.
+
+![Select the control type to create](/images/select-control-type-to-create.png)
+</Step>
+
+<Step title="Configure the control">
+Fill in the control details. See [Defining controls](/concepts/defining-controls) for a full explanation of each field.
+
+![Configure the selected control type](/images/configure-selected-control-type.png)
+
+| Field | Description |
+|-------|-------------|
+| **Control name** | A unique identifier for the control |
+| **Enabled** | Toggle the control on or off |
+| **Stages** | When to evaluate — `Pre` (before execution) or `Post` (after execution) |
+| **Selector path** | The data path to evaluate (for example, `*` for all fields) |
+| **Action** | What happens on a match — `Deny` blocks the request |
+| **Execution environment** | Where evaluation runs — `Server` or `Client` |
+| **Evaluator configuration** | Type-specific settings (values, logic, match mode, case sensitivity) |
+
+Click **Save** to register the control. It takes effect immediately — no redeployment needed.
+</Step>
+</Steps>
+
+## Managing Controls
+
+Once you create [controls](/concepts/controls) and assign them to a [policy](/concepts/policy), the dashboard displays them in a list view:
+
+![Controls added in the UI](/images/controls-added.png)
+
+Each entry shows the control name, evaluation stage (`pre`/`post`), [evaluator](/concepts/evaluators/overview) type, and assigned policy.
+
+**Key benefits of managing controls in the UI:**
+
+- Add, update, or disable controls without code changes
+- View all active controls across agents in one place
+- See which controls belong to which [policies](/concepts/policy) at a glance
+- Iterate on rules without redeploying your agent
+
+## Monitoring
+
+The monitoring dashboard shows real-time control activity across all agents:
+
+![Control monitoring dashboard](/images/monitor-controls.png)
+
+- **Total evaluations** — Requests processed per control
+- **Block count** — Requests denied per control
+- **Pass/block ratio** — Visual breakdown of allowed vs. blocked operations
+- **Activity timeline** — Recent evaluations with timestamps
+
+Use this view to verify controls are working, spot patterns that need tuning, and audit which controls triggered on which agent.
+
+<Note>
+Monitoring data populates as agents process requests. Run the [Agent Control Demo](/examples/agent-control-demo) to generate sample data:
+
+```bash
+uv run python examples/agent_control_demo/demo_agent.py
+```
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+  <Card title="Agent Control Demo" icon="play" href="/examples/agent-control-demo">
+    Full end-to-end walkthrough with runnable scripts.
+  </Card>
+
+  <Card title="Defining Controls" icon="shield" href="/concepts/defining-controls">
+    Learn how to define controls using the SDK or API.
+  </Card>
+
+  <Card title="Evaluators" icon="magnifying-glass" href="/concepts/evaluators/overview">
+    Explore built-in and custom evaluator types.
+  </Card>
+
+  <Card title="Configuration" icon="gear" href="/configuration">
+    Server configuration, authentication, and deployment options.
+  </Card>
+
+</CardGroup>
