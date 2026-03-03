@@ -19,14 +19,14 @@ flowchart TD
 
     subgraph Server["Agent Control Server"]
         direction LR
-        Controls["Controls\nAPI"] ~~~ Policies["Policies\nAPI"] ~~~ Evaluators["Evaluators\nRegistry"] ~~~ Agents["Agents\nAPI"]
+        Controls["Controls API"] ~~~  Evaluators["Evaluators Registry"] ~~~ Agents["Agents API"]
     end
 
     Server --> Ecosystem
 
     subgraph Ecosystem["Evaluator Ecosystem"]
         direction LR
-        Regex["Regex\nEvaluator"] ~~~ List["List\nEvaluator"] ~~~ Luna["Luna-2\nEvaluator"] ~~~ Custom["Custom\nEvaluators"]
+        Regex["Regex valuator"] ~~~ List["List Evaluator"] ~~~ Luna["Luna-2 Evaluator"] ~~~ Custom["Custom Evaluators"]
     end
 ```
 
