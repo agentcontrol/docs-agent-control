@@ -1,0 +1,265 @@
+---
+title: Decorate LLM tool calls
+description: Learn how to decorate LLM tool calls with Agent Control.
+---
+
+Add `@control()` to any function to enforce server-managed safety controls on its inputs and outputs. This guide walks you through:
+
+- Setting up your environment.
+- Creating two agent controls--`block-ssn-output` and `block-dangerous-sql`--
+to block social security numbers and dangerous SQL queries, respectively.
+- Decorating an LLM call that asks "What is the capital of France?" and "DROP TABLE users".
+- Returning the answer to the former and blocking the potentially dangerous SQL injection.
+
+## Prerequisites
+
+- Python 3.12+, [uv](https://docs.astral.sh/uv/), Docker
+
+<Steps>
+<Step title="Start the server">
+
+```bash
+git clone https://github.com/agentcontrol/agent-control.git
+cd agent-control
+make sync
+
+cd server && docker-compose up -d && cd ..
+make server-alembic-upgrade
+make server-run                    # leave running — use a new terminal below
+```
+
+</Step>
+<Step title="Create your project">
+
+```bash
+mkdir my-agent && cd my-agent
+uv init
+uv add agent-control-sdk anthropic  # swap anthropic for openai, etc.
+```
+
+</Step>
+<Step title="Create setup_controls.py">
+
+```bash
+cd my-agent 
+touch setup_controls.py
+```
+
+This script registers your agent, creates two controls, groups them in a policy, and assigns the policy to the agent. Copy and paste the following into `setup_controls.py`.
+
+```python
+"""One-time setup: create an agent, two controls, and a policy."""
+import asyncio
+from agent_control import AgentControlClient
+from agent_control import controls, policies
+
+AGENT_NAME = "my-agent"
+AGENT_ID = "a1b2c3d4-0000-4000-8000-000000000001"  # any stable UUID
+SERVER_URL = "http://localhost:8000"
+
+
+async def main():
+    async with AgentControlClient(base_url=SERVER_URL) as client:
+        # 1. Register the agent
+        resp = await client.http_client.post(
+            "/api/v1/agents/initAgent",
+            json={
+                "agent": {
+                    "agent_id": AGENT_ID,
+                    "agent_name": AGENT_NAME,
+                    "agent_description": "Demo agent",
+                },
+                "steps": [],
+            },
+        )
+        resp.raise_for_status()
+
+        # 2. Create controls
+        ssn = await controls.create_control(client, "block-ssn-output", data={
+            "enabled": True,
+            "execution": "server",
+            "scope": {"step_types": ["llm"], "stages": ["post"]},
+            "selector": {"path": "output"},
+            "evaluator": {
+                "name": "regex",
+                "config": {"pattern": r"\b\d{3}-\d{2}-\d{4}\b"},
+            },
+            "action": {"decision": "deny"},
+        })
+
+        sql = await controls.create_control(client, "block-dangerous-sql", data={
+            "enabled": True,
+            "execution": "server",
+            "scope": {"step_types": ["llm"], "stages": ["pre"]},
+            "selector": {"path": "input"},
+            "evaluator": {
+                "name": "list",
+                "config": {
+                    "values": ["DROP", "DELETE", "TRUNCATE"],
+                    "logic": "any",
+                    "match_on": "match",
+                    "match_mode": "contains",
+                    "case_sensitive": False,
+                },
+            },
+            "action": {"decision": "deny"},
+        })
+
+        # 3. Create policy, attach controls, assign to agent
+        policy = await policies.create_policy(client, "my-policy")
+        pid = policy["policy_id"]
+        await policies.add_control_to_policy(client, pid, ssn["control_id"])
+        await policies.add_control_to_policy(client, pid, sql["control_id"])
+        await policies.assign_policy_to_agent(client, AGENT_ID, pid)
+
+        print(f"Done — agent '{AGENT_NAME}' ready with 2 controls")
+
+
+asyncio.run(main())
+```
+
+<Note>
+Agent, control, and policy names must be unique. If you get a 409 conflict, pick new names or [reset the database](#troubleshooting).
+</Note>
+
+```bash
+uv run python setup_controls.py
+```
+
+</Step>
+<Step title="Create main.py">
+
+Three things to add to a normal LLM script: `import`, `init()`, `@control()`.
+
+```python
+import asyncio
+import anthropic
+import agent_control
+from agent_control import control, ControlViolationError
+
+AGENT_NAME = "my-agent"
+AGENT_ID = "a1b2c3d4-0000-4000-8000-000000000001"  # must match setup_controls.py
+
+# Initialize once at startup
+agent_control.init(
+    agent_name=AGENT_NAME,
+    agent_id=AGENT_ID,
+    server_url="http://localhost:8000",
+)
+
+client = anthropic.Anthropic()          # uses ANTHROPIC_API_KEY env var
+
+@control()
+async def chat(message: str) -> str:
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": message}],
+    )
+    return response.content[0].text
+
+async def main():
+    for prompt in ["What is the capital of France?", "DROP TABLE users"]:
+        try:
+            result = await chat(prompt)
+            print(f"✅ {prompt} → {result[:60]}")
+        except ControlViolationError as e:
+            print(f"🚫 {prompt} → blocked by {e.control_name}")
+
+asyncio.run(main())
+```
+
+</Step>
+<Step title="Run it">
+
+```bash
+export ANTHROPIC_API_KEY="your-key"
+uv run python main.py
+```
+
+```bash
+✅ What is the capital of France? → The capital of France is Paris.
+🚫 DROP TABLE users → blocked by block-dangerous-sql
+```
+
+</Step>
+</Steps>
+
+---
+
+## How it works
+
+1. **Pre-stage** — before the function runs, the decorator sends its input to the server. Controls scoped to `"pre"` evaluate it. If denied, the function never executes.
+2. **Execution** — the LLM call runs normally.
+3. **Post-stage** — after the function returns, the decorator sends the output to the server. Controls scoped to `"post"` evaluate it. If denied, the output is blocked.
+
+## Decorate tool calls the same way
+
+```python
+@control()
+async def execute_query(query: str) -> str:
+    return await db.run(query)
+```
+
+## Any LLM SDK works
+
+`@control()` wraps the function, not a specific provider:
+
+```python
+@control()
+async def openai_chat(message: str) -> str:
+    return openai_client.chat.completions.create(...).choices[0].message.content
+```
+
+## Key points
+
+- Works on both `async` and sync functions.
+- Controls live on the server — update them without redeploying your agent.
+- Fail-safe: if the server is unreachable, the call is blocked, not silently allowed.
+
+---
+
+## Troubleshooting
+
+### 409 Conflict — name already exists
+
+Agent, control, and policy names are unique. Re-running `setup_controls.py` against a database that already has those names will return a `409 Conflict`.
+
+**Option A — pick new names.** Change the name strings in `setup_controls.py` (and update `AGENT_NAME`/`AGENT_ID` in `main.py` to match).
+
+**Option B — reset the database.** From the repo root, stop the server, wipe the Docker volume, and re-run migrations:
+
+```bash
+# stop the running server (Ctrl-C), then:
+cd server
+docker compose down -v          # removes the postgres volume
+docker compose up -d            # recreates a fresh database
+make alembic-upgrade            # re-applies migrations
+cd ..
+make server-run                 # restart the server
+```
+
+Then re-run `setup_controls.py`.
+
+### TypeError: `init()` missing required argument `agent_id`
+
+`agent_control.init()` requires both `agent_name` and `agent_id`. Make sure your `main.py` passes both:
+
+```python
+agent_control.init(
+    agent_name=AGENT_NAME,
+    agent_id=AGENT_ID,          # ← required
+    server_url="http://localhost:8000",
+)
+```
+
+### 422 Unprocessable Entity on `initAgent`
+
+The `/initAgent` payload must include `agent_id` (a valid UUID string) inside the `agent` object. Double-check your `setup_controls.py` sends it:
+
+```python
+"agent": {
+    "agent_id": AGENT_ID,      # ← must be a UUID string
+    "agent_name": AGENT_NAME,
+}
+```

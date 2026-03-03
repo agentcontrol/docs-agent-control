@@ -73,6 +73,7 @@ SSNs
 [U,u]ncomment
 uniqueItems
 [U,u]nparseable
+Unprocessable
 [U,u]ntrusted
 uri
 URIs
