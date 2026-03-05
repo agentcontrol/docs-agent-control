@@ -10,10 +10,10 @@ Understanding these core concepts will help you get the most out of Agent Contro
 A **[Control](/concepts/controls)** is a single rule that defines what to check and what to do when a condition is met.
 
 ```text
-Control = Selector + Evaluator + Action
+Control = Scope + Selector + Evaluator + Action
 ```
 
-Example: *"If the output contains an SSN pattern, block the response."*
+Example: "If the output contains an SSN pattern, block the response."
 
 ```json
 {
@@ -29,42 +29,65 @@ Example: *"If the output contains an SSN pattern, block the response."*
 }
 ```
 
-### 📋 Control Sets
+## Scope
 
-A **Control Set** is a named group of related controls. Use them to organize controls by purpose.
+**Scope** defines when a control runs by filtering which steps are evaluated.
 
-| Control Set | Controls |
-|-------------|----------|
-| `safety-controls` | block-toxicity, block-harassment, block-violence |
-| `compliance-controls` | block-pii, block-phi, audit-logging |
-| `quality-controls` | check-hallucination, verify-sources |
+Fields:
+- `step_types`: Step types to target (e.g., `["tool", "llm"]`). If null, applies to all types.
+- `step_names`: Exact step names to target (e.g., `["search_db", "send_email"]`).
+- `step_name_regex`: Regex pattern to match step names (e.g., `"^db_.*"`).
+- `stages`: When to evaluate — `["pre", "post"]`.
+  - `pre`: Check before execution (block bad inputs, prevent prompt injection)
+  - `post`: Check after execution (filter bad outputs, redact PII)
 
-## 📜 Policies
+Example: apply to all tool steps before execution:
 
-A **[Policy](/concepts/policy)** combines one or more Control Sets and is assigned to agents. Policies let you:
-
-- Reuse control sets across multiple agents
-- Version and audit your safety rules
-- Apply different policies to different environments (dev/staging/prod)
-
-```text
-Policy → Control Sets → Controls → Agents
+```json
+{
+  "scope": {
+    "step_types": ["tool"],
+    "stages": ["pre"]
+  }
+}
 ```
 
-## 🎯 Selectors
+Example: target specific database operations:
 
-A **Selector** defines *what data* to extract from the payload for evaluation.
+```json
+{
+  "scope": {
+    "step_names": ["query_database", "execute_sql", "db_lookup"],
+    "stages": ["pre"]
+  }
+}
+```
+
+Example: match multiple steps with regex:
+
+```json
+{
+  "scope": {
+    "step_name_regex": "^db_.*",
+    "stages": ["pre", "post"]
+  }
+}
+```
+
+## Selectors
+
+A **Selector** defines what data to extract from the payload for evaluation.
 
 | Path | Description | Example Use |
 |------|-------------|-------------|
 | `input` | Step input (tool args or LLM input) | Check for prompt injection |
 | `output` | Step output | Check for PII leakage |
 | `input.query` | Tool input field | Block SQL injection |
-| `name` | Step name (tool name or model/chain id, required) | Restrict step usage |
+| `name` | Step name (tool name or model/chain id) | Restrict step usage |
 | `context.user_id` | Context field | User-based rules |
 | `*` | Entire step | Full payload analysis |
 
-**Step scoping:** Controls can also scope by step type/name/stage:
+Controls can also scope by step type/name/stage:
 
 ```json
 {
@@ -77,10 +100,42 @@ A **Selector** defines *what data* to extract from the payload for evaluation.
 }
 ```
 
-Explore each area in detail:
+## Evaluators
+
+An **Evaluator** receives the selected data and checks it against configured rules.
+
+```json
+{
+  "evaluator": {
+    "name": "list",
+    "config": {
+      "values": ["DROP", "DELETE", "TRUNCATE"],
+      "case_sensitive": false
+    }
+  }
+}
+```
+
+## Actions
+
+An **Action** defines what happens when a control matches.
+
+```json
+{
+  "action": {
+    "decision": "deny"
+  }
+}
+```
+
+### Priority Semantics
+
+1. **Deny wins** — if any `deny` control matches, execution is blocked.
+2. **Steer second** — if any `steer` control matches (and no deny), steering context is returned.
+3. **Allow/warn/log** — observability actions that do not block execution.
+
+## Learn more
 
 - [Architecture](/concepts/architecture)
-- [Policy](/concepts/policy)
 - [Controls](/concepts/controls)
-- [Defining controls](/concepts/defining-controls)
 - [Evaluators](/concepts/evaluators/overview)

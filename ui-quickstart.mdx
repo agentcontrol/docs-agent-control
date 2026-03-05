@@ -1,10 +1,10 @@
 ---
 title: UI Quickstart
-description: Launch the Agent Control dashboard to manage controls, policies, and monitoring from your browser.
+description: Launch the Agent Control dashboard to manage controls and monitoring from your browser.
 icon: "browser"
 ---
 
-The Agent Control dashboard lets you manage [controls](/concepts/controls), assign [policies](/concepts/policy), and monitor agent activity — no code changes required.
+The Agent Control dashboard lets you manage [controls](/concepts/controls) and monitor agent activity — no code changes required.
 
 ## Prerequisites
 
@@ -12,8 +12,8 @@ Before starting the UI, make sure the **Agent Control server** is already runnin
 
 You also need:
 
-- **Node.js 18+**
-- **pnpm** — Fast Node.js package manager (`npm install -g pnpm`)
+- **Node.js 20+** (CI uses 20; 18+ may work)
+- **pnpm 9+** — install from [pnpm.io](https://pnpm.io/) or run `corepack enable && corepack prepare pnpm@latest --activate`
 
 ## Start the UI Server
 
@@ -35,7 +35,7 @@ Keep the Agent Control server (`make server-run`) and the UI (`pnpm dev`) runnin
 </Step>
 
 <Step title="Verify the dashboard is running">
-Open [http://localhost:4000](http://localhost:4000). You should see an empty state — this is expected before any controls or policies are registered.
+Open [http://localhost:4000](http://localhost:4000). You should see an empty state — this is expected before any controls are registered.
 
 ![Dashboard with no controls at startup](/images/no-controls-at-startup.png)
 
@@ -43,7 +43,7 @@ The dashboard reflects the server's current configuration. Controls appear here 
 </Step>
 </Steps>
 
-## Creating Controls from the UI
+## Create Controls from the UI
 
 You can create controls directly in the dashboard — no scripts or SDK code required.
 
@@ -61,7 +61,7 @@ Choose an [evaluator](/concepts/evaluators/overview) type for your control. Opti
 </Step>
 
 <Step title="Configure the control">
-Fill in the control details. See [Defining controls](/concepts/defining-controls) for a full explanation of each field.
+Fill in the control details. See [Controls](/concepts/controls) for a full explanation of each field.
 
 ![Configure the selected control type](/images/configure-selected-control-type.png)
 
@@ -79,20 +79,13 @@ Click **Save** to register the control. It takes effect immediately — no redep
 </Step>
 </Steps>
 
-## Managing Controls
+## Regenerate API Types (Optional)
 
-Once you create [controls](/concepts/controls) and assign them to a [policy](/concepts/policy), the dashboard displays them in a list view:
+If you update the server API and need fresh UI types, regenerate them from the running server:
 
-![Controls added in the UI](/images/controls-added.png)
-
-Each entry shows the control name, evaluation stage (`pre`/`post`), [evaluator](/concepts/evaluators/overview) type, and assigned policy.
-
-**Key benefits of managing controls in the UI:**
-
-- Add, update, or disable controls without code changes
-- View all active controls across agents in one place
-- See which controls belong to which [policies](/concepts/policy) at a glance
-- Iterate on rules without redeploying your agent
+```bash
+pnpm fetch-api-types  # fetches from http://localhost:8000/openapi.json
+```
 
 ## Monitoring
 
@@ -124,7 +117,7 @@ uv run python examples/agent_control_demo/demo_agent.py
     Full end-to-end walkthrough with runnable scripts.
   </Card>
 
-  <Card title="Defining Controls" icon="shield" href="/concepts/defining-controls">
+  <Card title="Controls" icon="shield" href="/concepts/controls">
     Learn how to define controls using the SDK or API.
   </Card>
 

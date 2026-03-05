@@ -35,7 +35,6 @@
               "concepts",
               "concepts/architecture",
               "concepts/controls",
-              "concepts/defining-controls",
               {
                 "group": "Evaluators",
                 "pages": [
@@ -89,7 +88,7 @@
                 "group": "Use case examples",
                 "pages": [
                   "examples/customer-support",
-                  "examples/financial-agent"
+                  "examples/steer-action-demo"
                 ]
               }
             ]
@@ -99,7 +98,11 @@
             "pages": [
               "reference",
               "sdk/python-sdk",
-              "sdk/typescript-sdk"
+              "sdk/typescript-sdk",
+              "server",
+              "engine",
+              "models",
+              "evaluators"
             ]
           },
           {
@@ -142,7 +145,7 @@
             "group": "Use case examples",
             "pages": [
               "examples/customer-support",
-              "examples/financial-agent"
+              "examples/steer-action-demo"
             ]
           }
         ]

@@ -1,49 +1,10 @@
 ---
-title: AWS Strands Integration
-description: Integrate Agent Control with AWS Strands agent workflows.
-icon: "cloud"
+title: AWS Strands
+description: Add Agent Control guardrails to AWS Strands agent workflows.
 ---
 
-## Overview
+This example documents how to integrate Agent Control with AWS Strands agent workflows.
 
-This example shows how to add Agent Control guardrails to an AWS Strands agent workflow, so you can enforce policies on inputs and outputs without changing business logic.
+## Status
 
-## What this covers
-
-- Initialize an agent with the Agent Control SDK
-- Protect Strands tool calls and LLM steps with `@control()`
-- Apply policy-driven controls from the server
-
-## High-level flow
-
-1. **Initialize the agent** with `agent_control.init()` when your Strands workflow starts.
-2. **Wrap tool and LLM steps** with `@control()` to enforce policy checks.
-3. **Configure controls** in the Agent Control server for the relevant step names and stages.
-
-## Example setup
-
-```python
-import agent_control
-from agent_control import control
-
-agent_control.init(
-    agent_name="strands-agent",
-    agent_id="aws-strands-prod"
-)
-
-@control(step_name="strands_tool")
-async def invoke_strands_tool(payload: dict) -> dict:
-    return await strands_tool(payload)
-```
-
-## Recommended controls
-
-- **Prompt injection** on `input` (pre)
-- **PII leakage** on `output` (post)
-- **Restricted tool usage** via `scope.step_names`
-
-## Next steps
-
-- [Server configuration](/configuration)
-- [Python SDK](/sdk/python-sdk)
-- [Controls and policies](/concepts/controls)
+The example directory exists at `examples/strands_integration` in the agent-control repo. Documentation will be expanded as the example code is finalized.

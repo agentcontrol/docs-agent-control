@@ -1,0 +1,41 @@
+---
+title: Server
+description: FastAPI server for Agent Control — configuration, auth, and APIs.
+icon: "server"
+---
+
+The Agent Control server provides centralized control management and evaluation services via REST API.
+
+## Highlights
+
+- Control management endpoints
+- Agent registration and control associations
+- Server-side evaluation and observability
+- API key authentication and metrics
+
+## Development Quick Start
+
+```bash
+# From the repo root
+make sync
+make server-run
+```
+
+## Configuration
+
+Use environment variables to configure the server (database, auth, observability, evaluators). Full details:
+
+- [Configuration](/configuration)
+- [Reference](/reference)
+
+## API Overview
+
+Base URL: `http://localhost:8000/api/v1`
+
+Key endpoints include:
+- `/agents` and `/agents/{agent_name}`
+- `/controls` and `/controls/{control_id}`
+- `/evaluation`
+- `/observability/*`
+
+See the [Reference](/reference#server-api) for full endpoints and payloads.

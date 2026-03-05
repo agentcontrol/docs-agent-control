@@ -24,43 +24,86 @@ The SDK source lives in a [uv](https://github.com/astral-sh/uv) workspace. To wo
 ```bash
 cd sdk/
 
-uv sync            # Install dependencies
-uv run pytest      # Run tests
+uv sync             # Install dependencies
+uv run pytest       # Run tests
 uv run ruff check . # Lint
-uv run mypy .      # Type-check
+uv run mypy .       # Type-check
 ```
+
+---
+
+## Concepts (Reference)
+
+A **Control** is a single rule that defines what to check and what to do when a condition is met.
+
+```text
+Control = Scope + Selector + Evaluator + Action
+```
+
+**Control associations** are direct links between controls and agents.
+
+```text
+Controls → Agents
+```
+
+**Check stages**:
+
+| Stage | When | Use Case |
+|-------|------|----------|
+| `pre` | Before execution | Block bad inputs, prevent prompt injection |
+| `post` | After execution | Filter bad outputs, redact PII |
+
+**Selectors**:
+
+| Path | Description | Example Use |
+|------|-------------|-------------|
+| `input` | Step input (tool args or LLM input) | Check for prompt injection |
+| `output` | Step output | Check for PII leakage |
+| `input.query` | Tool input field | Block SQL injection |
+| `name` | Step name (tool name or model/chain id) | Restrict step usage |
+| `context.user_id` | Context field | User-based rules |
+| `*` | Entire step | Full payload analysis |
+
+**Actions**:
+
+| Action | Behavior |
+|--------|----------|
+| `deny` | Block the request/response, raise `ControlViolationError` |
+| `steer` | Raise `ControlSteerError` with steering context for correction and retry |
+| `allow` | Permit execution (no effect if a `deny` control also matches) |
+| `warn` | Log a warning but allow execution |
+| `log` | Silent logging for monitoring only |
+
+Priority semantics:
+1. **Deny wins** — if any `deny` control matches, execution is blocked.
+2. **Steer second** — if any `steer` control matches (and no deny), steering context is returned.
+3. **Allow/warn/log** — observability actions that do not block execution.
 
 ---
 
 ## Server API
 
-The Agent Control server exposes a RESTful API for managing agents, controls, and policies.
+The Agent Control server exposes a RESTful API for managing agents and controls.
 
 ### Base URL
 
-[http://localhost:8000/api/v1](http://localhost:8000/api/v1npx)
-
-
-### Authentication
-
-When API key authentication is enabled, include your key in the `X-API-Key` header. See [Configuration — Authentication](/configuration#authentication) for setup details and environment variables.
+Default: `http://localhost:8000/api/v1`
 
 ### Endpoints
 
-#### Agents
+**Agents**:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/agents` | List all agents |
 | `POST` | `/agents/initAgent` | Register a new agent |
-| `GET` | `/agents/{agent_id}` | Get agent details |
-| `PATCH` | `/agents/{agent_id}` | Update agent |
-| `GET` | `/agents/{agent_id}/controls` | List controls for agent |
-| `GET` | `/agents/{agent_id}/policy` | Get agent's policy |
-| `POST` | `/agents/{agent_id}/policy/{policy_id}` | Assign policy |
-| `DELETE` | `/agents/{agent_id}/policy` | Remove policy |
+| `GET` | `/agents/{agent_name}` | Get agent details |
+| `PATCH` | `/agents/{agent_name}` | Update agent |
+| `GET` | `/agents/{agent_name}/controls` | List controls for agent |
+| `POST` | `/agents/{agent_name}/controls/{control_id}` | Add control to agent |
+| `DELETE` | `/agents/{agent_name}/controls/{control_id}` | Remove control from agent |
 
-#### Controls
+**Controls**:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -70,20 +113,73 @@ When API key authentication is enabled, include your key in the `X-API-Key` head
 | `PATCH` | `/controls/{control_id}` | Update control |
 | `DELETE` | `/controls/{control_id}` | Delete control |
 
-#### Policies
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `PUT` | `/policies` | Create policy |
-| `GET` | `/policies/{policy_id}/controls` | List controls in policy |
-| `POST` | `/policies/{policy_id}/controls/{control_id}` | Add control to policy |
-| `DELETE` | `/policies/{policy_id}/controls/{control_id}` | Remove control |
-
-#### System
+**System**:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/health` | Health check (no auth required) |
+
+---
+
+## Authentication
+
+Agent Control supports API key authentication for production deployments.
+
+### Configuration
+
+Authentication is controlled by environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AGENT_CONTROL_API_KEY_ENABLED` | `false` | Master toggle for authentication |
+| `AGENT_CONTROL_API_KEYS` | — | Comma-separated list of valid API keys |
+| `AGENT_CONTROL_ADMIN_API_KEYS` | — | Comma-separated list of admin API keys |
+
+### Usage
+
+Include the API key in the `X-API-Key` header:
+
+```bash
+curl -H "X-API-Key: your-api-key" http://localhost:8000/api/v1/agents
+```
+
+With the Python SDK:
+
+```python
+from agent_control import AgentControlClient
+
+# Via constructor
+async with AgentControlClient(api_key="your-api-key") as client:
+    await client.health_check()
+
+# Or via environment variable
+# export AGENT_CONTROL_API_KEY="your-api-key"
+async with AgentControlClient() as client:
+    await client.health_check()
+```
+
+### Access Levels
+
+| Endpoint | Required Level |
+|----------|----------------|
+| `/health` | Public (no auth) |
+| All `/api/v1/*` | API key required |
+
+### Key Rotation
+
+Agent Control supports multiple API keys for zero-downtime rotation:
+
+1. Add new key to `AGENT_CONTROL_API_KEYS` (e.g., `key1,key2,new-key`)
+2. Deploy the server
+3. Update clients to use the new key
+4. Remove the old key from the variable
+5. Redeploy
+
+---
+
+## Configuration
+
+See [Configuration](/configuration) for full environment variables, server settings, and database setup.
 
 ---
 
@@ -122,7 +218,7 @@ If you get 401 Unauthorized:
 docker ps | grep postgres
 
 # Restart the database
-cd server && docker-compose down && docker-compose up -d
+cd server && docker compose down && docker compose up -d
 
 # Re-run migrations
 make alembic-upgrade
@@ -148,10 +244,3 @@ make alembic-upgrade
 
 - Verify the Galileo package is installed
 - Check server logs for evaluator discovery messages
-
----
-
-## Related
-
-- [Configuration](/configuration) — Environment variables, authentication, and database setup
-- [Testing](/testing) — Running and validating controls

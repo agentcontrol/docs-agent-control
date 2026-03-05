@@ -10,6 +10,7 @@ icon: "gear"
 |----------|---------|-------------|
 | `AGENT_CONTROL_URL` | `http://localhost:8000` | Server URL |
 | `AGENT_CONTROL_API_KEY` | — | API key for authentication |
+| `DB_URL` | `postgresql+psycopg://agent_control:agent_control@localhost:5432/agent_control` | Database connection string (SQLite: `sqlite+aiosqlite:///./agent_control.db`) |
 
 ---
 
@@ -22,7 +23,6 @@ icon: "gear"
 | `HOST` | `0.0.0.0` | Server bind address |
 | `PORT` | `8000` | Server port |
 | `DEBUG` | `false` | Enable debug mode |
-| `LOG_LEVEL` | `INFO` | Logging level |
 | `API_VERSION` | `v1` | API version prefix |
 | `API_PREFIX` | `/api` | API path prefix |
 
@@ -38,19 +38,28 @@ icon: "gear"
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `DATABASE_URL` | — | Database URL for Docker deployments |
 | `DB_HOST` | `localhost` | PostgreSQL host |
 | `DB_PORT` | `5432` | PostgreSQL port |
 | `DB_USER` | `agent_control` | Database user |
 | `DB_PASSWORD` | `agent_control` | Database password |
 | `DB_DATABASE` | `agent_control` | Database name |
 | `DB_DRIVER` | `psycopg` | Database driver |
-| `DB_URL` | — | Full database URL (overrides individual settings above) |
+| `DB_URL` | — | Database URL (legacy; overrides individual settings above) |
+
+### Observability
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OBSERVABILITY_ENABLED` | `true` | Enable observability pipeline |
+| `OBSERVABILITY_FLUSH_INTERVAL_SECONDS` | `10` | Flush interval for observability events |
 
 ### Evaluators
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GALILEO_API_KEY` | — | API key for Luna-2 evaluator |
+| `PROMETHEUS_METRICS_PREFIX` | `agent_control_server` | Metrics prefix for Prometheus exports |
 
 ---
 
@@ -122,7 +131,7 @@ Agent Control uses PostgreSQL. The easiest way to run it locally:
 
 ```bash
 cd server
-docker-compose up -d          # Start PostgreSQL
+docker compose up -d          # Start PostgreSQL
 make alembic-upgrade          # Run migrations
 ```
 

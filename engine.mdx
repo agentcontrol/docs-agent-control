@@ -1,0 +1,25 @@
+---
+title: Engine
+description: Core evaluation engine for Agent Control.
+icon: "cpu"
+---
+
+The engine is the runtime that evaluates controls, resolves selectors, and runs evaluators.
+
+## Responsibilities
+
+- Evaluator discovery via Python entry points
+- Selector evaluation and payload extraction
+- Evaluator execution and result aggregation
+- Cached evaluator instances for performance
+
+## Evaluator Discovery
+
+```python
+from agent_control_engine import discover_evaluators, list_evaluators
+
+discover_evaluators()
+print(list_evaluators())
+```
+
+For evaluator details, see [Evaluators](/evaluators).
