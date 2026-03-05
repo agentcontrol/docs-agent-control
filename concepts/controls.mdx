@@ -13,13 +13,18 @@ Control formula: **Control = Scope (When) + Selector (What) + Evaluator (How) + 
 
 The **Scope** defines which steps trigger the control—acting as a filter to select specific sections of your agent workflow to monitor.
 
-**Fields:**
+Fields:
 
 - `step_types`: List of step types (`['tool', 'llm_inference']`). If null, applies to all types.
+
 - `step_names`: List of exact step names to target (e.g., `['search_db', 'send_email']`)
+
 - `step_name_regex`: Regex pattern for step name matching (e.g., `"^db.*"` matches all "db_" prefixed steps)
+
 - `stages`: When to evaluate - `['pre', 'post']`
+
   - `'pre'`: Check before execution (block bad inputs, prevent prompt injection)
+
   - `'post'`: Check after execution (filter bad outputs, redact PII)
 
 ### Example 1: Apply to all tool steps before execution
@@ -74,18 +79,24 @@ The **Scope** defines which steps trigger the control—acting as a filter to se
 
 The **Selector** specifies which portion of the step's data to extract and pass to the evaluator for analysis. It uses a path specification to navigate the step object.
 
-**Field:**
+Field:
 
 - `path`: Dot-notation path to the data you want to evaluate
 
-**Common Paths:**
+Common Paths:
 
 - `"input"` - Entire input to the step
+
 - `"output"` - Step's output/result
+
 - `"input.query"` - Specific parameter within input
+
 - `"input.user_message"` - User message field
+
 - `"name"` - The step/tool name itself
+
 - `"context.user_id"` - Context metadata
+
 - `"*"` - All available payload data
 
 ### Example 1: Check tool output for PII
@@ -134,9 +145,10 @@ The **Selector** specifies which portion of the step's data to extract and pass 
 
 The **Evaluator** receives the data extracted by the selector and evaluates it against configured rules, returning whether the data matches specified criteria.
 
-**Components:**
+Components:
 
 - `config`: Evaluator-specific configuration, validated against the evaluator's schema
+
 - `metadata`: Optional evaluator identification
 
 ### Example 1: Regex evaluator to detect PII
@@ -194,7 +206,7 @@ The **Evaluator** receives the data extracted by the selector and evaluates it a
 }
 ```
 
-**Custom Evaluators:**
+Custom Evaluators:
 Agent Control supports custom evaluators for domain-specific requirements. See [examples/DeepEval](/examples/deepeval) for a complete example of creating and integrating custom evaluators.
 
 ---
@@ -203,14 +215,20 @@ Agent Control supports custom evaluators for domain-specific requirements. See [
 
 The **Action** defines what happens when the evaluator matches/detects an issue.
 
-**Fields:**
+Fields:
 
 - `decision`: The enforcement action to take
+
   - `"allow"` - Continue execution (useful for allowlist controls)
+
   - `"deny"` - Hard stop execution (blocks the request)
+
   - `"steer"` - Provides corrective guidance to help agents satisfy control requirement
+
   - `"warn"` - Log a warning but continue execution
+
   - `"log"` - Log the match for observability only
+
 - `metadata`: Optional additional context (JSON object)
 
 ### Important: "Deny Wins" Semantics
@@ -273,6 +291,7 @@ Agent Control uses "deny wins" logic: if **any** enabled control with a `deny` a
   }
 }
 ```
+
 ---
 
 ## Complete Control Example
@@ -315,7 +334,7 @@ You can create and configure controls via the SDK, API, or UI.
 
 ### Example: Block PII in Output (Regex)
 
-**Via Python SDK:**
+Via Python SDK:
 
 ```python
 from agent_control import AgentControlClient, controls
@@ -339,15 +358,18 @@ async with AgentControlClient() as client:
     )
 ```
 
-**Via curl:**
+Via curl:
 
 ```bash
+
 # Step 1: Create control
+
 CONTROL_ID=$(curl -X PUT http://localhost:8000/api/v1/controls \
   -H "Content-Type: application/json" \
   -d '{"name": "block-ssn-output"}' | jq -r '.control_id')
 
 # Step 2: Set control configuration
+
 curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
   -H "Content-Type: application/json" \
   -d '{
@@ -368,7 +390,7 @@ curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
 
 ### Example: Block Toxic Input (Luna-2 AI)
 
-**Via Python SDK:**
+Via Python SDK:
 
 ```python
 await controls.create_control(
@@ -393,10 +415,12 @@ await controls.create_control(
 )
 ```
 
-**Via curl:**
+Via curl:
 
 ```bash
+
 # Create control with Luna-2 evaluator
+
 CONTROL_ID=$(curl -X PUT http://localhost:8000/api/v1/controls \
   -H "Content-Type: application/json" \
   -d '{"name": "block-toxic-input"}' | jq -r '.control_id')

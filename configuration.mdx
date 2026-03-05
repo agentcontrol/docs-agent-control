@@ -89,11 +89,14 @@ With the Python SDK:
 from agent_control import AgentControlClient
 
 # Via constructor
+
 async with AgentControlClient(api_key="your-api-key") as client:
     await client.health_check()
 
 # Or via environment variable
+
 # export AGENT_CONTROL_API_KEY="your-api-key"
+
 async with AgentControlClient() as client:
     await client.health_check()
 ```

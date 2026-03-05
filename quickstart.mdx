@@ -11,6 +11,7 @@ Protect your AI agent in 4 simple steps.
 ## Prerequisites
 
 - **Python 3.12+**
+
 - **Docker** — For running PostgreSQL
 
 ## Step 1: Start the Agent Control Server
@@ -35,22 +36,29 @@ curl -L https://raw.githubusercontent.com/agentcontrol/agent-control/refs/heads/
 
 ### Option B — Local development
 
-**Prerequisites:**
+Prerequisites:
+
 - **uv** — Fast Python package manager (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+
 - **Node.js 18+** — For the web dashboard (optional)
 
 ```bash
+
 # Clone the repository (contains the server)
+
 git clone https://github.com/agentcontrol/agent-control.git
 cd agent-control
 
 # Install dependencies
+
 make sync
 
 # Start the Agent Control server (boots Postgres + runs migrations)
+
 make server-run
 
 # Start the UI (in a separate shell)
+
 make ui-install
 make ui-dev
 ```
@@ -66,12 +74,15 @@ make ui-dev
 Agent must be registered with the server. You should also add the `@control()` decorator around tools and LLM call functions.
 
 ```python
+
 # my_agent.py
+
 import asyncio
 import agent_control
 from agent_control import control, ControlViolationError
 
 # Protect any function (like LLM calls)
+
 @control()
 async def chat(message: str) -> str:
     # In production: response = await llm.ainvoke(message)
@@ -81,12 +92,14 @@ async def chat(message: str) -> str:
     return f"Echo: {message}"
 
 # Initialize your agent
+
 agent_control.init(
     agent_name="awesome_bot_3000",  # Unique name
     agent_description="My Chatbot",
 )
 
 # Test it
+
 async def main():
     try:
         print(await chat("test"))  # ❌ Blocked
@@ -101,7 +114,9 @@ asyncio.run(main())
 The easiest way to add controls is to use the UI. You can also use the SDK or directly call the API.
 
 ```python
+
 # setup.py - Run once to configure agent controls
+
 import asyncio
 from datetime import datetime, UTC
 from agent_control import AgentControlClient, controls, agents
@@ -164,33 +179,42 @@ uv run my_agent.py
 
 **🎉 Done!** Your agent now blocks SSN patterns automatically.
 
-### What’s Happening Under the Hood?
+### What’s Happening Under the Hood
 
 1. Your app calls `chat("test")`
+
 2. Function executes and returns `"Your SSN is 123-45-6789"`
+
 3. `@control()` decorator sends output to Agent Control server
+
 4. Server checks the output against all controls
 5. `block-ssn` control finds SSN pattern → matches
 6. Server returns `is_safe=False` with the matched control
 7. SDK raises `ControlViolationError` and blocks the response
 
-**Key Benefits:**
+Key Benefits:
 
 - ✅ Controls are managed **separately** from your code
+
 - ✅ Update controls **without redeploying** your agent
+
 - ✅ Same controls can protect **multiple agents**
+
 - ✅ View analytics and control execution in the dashboard
 
 ## Next Steps
 
 - **Add more controls:** See [Controls](/concepts/controls#defining-controls) for examples and guidance
+
 - **Explore evaluators:** Try AI-powered evaluators like [Luna-2](/concepts/controls#example-block-toxic-input-luna-2-ai) or create custom evaluators. See [DeepEval example](/examples/deepeval) for custom evaluator examples
+
 - **Production setup:** Enable authentication — see the [Reference](/reference#authentication)
+
 - **Check examples:** See [Examples](/examples/overview) for real-world patterns
 
 > **💡 Pro Tip:** Start with simple regex controls, then graduate to AI-powered evaluators for complex safety checks.
 
-## What’s Next?
+## What’s Next
 
 <CardGroup cols={2}>
 

@@ -134,6 +134,7 @@ from agent_control import control, ControlViolationError
 AGENT_NAME = "my-agent"
 
 # Initialize once at startup
+
 agent_control.init(
     agent_name=AGENT_NAME,
     agent_description="Demo agent",
@@ -223,7 +224,9 @@ Agent and control names are unique. Re-running `setup_controls.py` against a dat
 **Option B — reset the database.** From the repo root, stop the server, wipe the Docker volume, and re-run migrations:
 
 ```bash
+
 # stop the running server (Ctrl-C), then:
+
 cd server
 docker compose down -v          # removes the postgres volume
 docker compose up -d            # recreates a fresh database

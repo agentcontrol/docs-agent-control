@@ -34,11 +34,17 @@ Example: "If the output contains an SSN pattern, block the response."
 **Scope** defines when a control runs by filtering which steps are evaluated.
 
 Fields:
+
 - `step_types`: Step types to target (e.g., `["tool", "llm"]`). If null, applies to all types.
+
 - `step_names`: Exact step names to target (e.g., `["search_db", "send_email"]`).
+
 - `step_name_regex`: Regex pattern to match step names (e.g., `"^db_.*"`).
+
 - `stages`: When to evaluate — `["pre", "post"]`.
+
   - `pre`: Check before execution (block bad inputs, prevent prompt injection)
+
   - `post`: Check after execution (filter bad outputs, redact PII)
 
 Example: apply to all tool steps before execution:
@@ -131,11 +137,15 @@ An **Action** defines what happens when a control matches.
 ### Priority Semantics
 
 1. **Deny wins** — if any `deny` control matches, execution is blocked.
+
 2. **Steer second** — if any `steer` control matches (and no deny), steering context is returned.
+
 3. **Allow/warn/log** — observability actions that do not block execution.
 
 ## Learn more
 
 - [Architecture](/concepts/architecture)
+
 - [Controls](/concepts/controls)
+
 - [Evaluators](/concepts/evaluators/overview)

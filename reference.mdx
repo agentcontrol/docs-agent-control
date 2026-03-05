@@ -75,8 +75,11 @@ Controls → Agents
 | `log` | Silent logging for monitoring only |
 
 Priority semantics:
+
 1. **Deny wins** — if any `deny` control matches, execution is blocked.
+
 2. **Steer second** — if any `steer` control matches (and no deny), steering context is returned.
+
 3. **Allow/warn/log** — observability actions that do not block execution.
 
 ---
@@ -149,11 +152,14 @@ With the Python SDK:
 from agent_control import AgentControlClient
 
 # Via constructor
+
 async with AgentControlClient(api_key="your-api-key") as client:
     await client.health_check()
 
 # Or via environment variable
+
 # export AGENT_CONTROL_API_KEY="your-api-key"
+
 async with AgentControlClient() as client:
     await client.health_check()
 ```
@@ -170,14 +176,17 @@ async with AgentControlClient() as client:
 Agent Control supports multiple API keys for zero-downtime rotation:
 
 1. Add new key to `AGENT_CONTROL_API_KEYS` (e.g., `key1,key2,new-key`)
+
 2. Deploy the server
+
 3. Update clients to use the new key
+
 4. Remove the old key from the variable
 5. Redeploy
 
 ---
 
-## Configuration
+## Configuration Reference
 
 See [Configuration](/configuration) for full environment variables, server settings, and database setup.
 
@@ -188,18 +197,25 @@ See [Configuration](/configuration) for full environment variables, server setti
 ### Server connection issues
 
 ```bash
+
 # Check if server is running
+
 curl http://localhost:8000/health
+
 # Expected: {"status":"healthy","version":"0.1.0"}
+
 ```
 
 ### Import errors
 
 ```bash
+
 # Install the SDK from workspace root
+
 make sync
 
 # Or install directly
+
 pip install -e sdks/python
 ```
 
@@ -208,39 +224,52 @@ pip install -e sdks/python
 If you get 401 Unauthorized:
 
 1. Check if auth is enabled: `AGENT_CONTROL_API_KEY_ENABLED`
+
 2. Verify your API key is in `AGENT_CONTROL_API_KEYS`
+
 3. Ensure the `X-API-Key` header is set correctly
 
 ### Database connection issues
 
 ```bash
+
 # Check if PostgreSQL is running
+
 docker ps | grep postgres
 
 # Restart the database
+
 cd server && docker compose down && docker compose up -d
 
 # Re-run migrations
+
 make alembic-upgrade
 ```
 
 ### Control not triggering
 
 1. Verify the control is enabled
+
 2. Check `scope.step_types` matches your step type (`llm` vs `tool`)
+
 3. Check `scope.stages` is correct (`pre` for input, `post` for output)
+
 4. Verify the selector path matches your data structure
 5. Test the evaluator pattern/values independently
 
 ### Luna-2 evaluator errors
 
 1. Ensure the Galileo package is installed: `pip install agent-control-evaluator-galileo` (or `pip install agent-control-evaluators[galileo]`)
+
 2. Ensure `GALILEO_API_KEY` is set
+
 3. Check network connectivity to Galileo API
+
 4. Verify the metric name is valid
 5. Check `on_error` setting if failures are silently allowed
 
 **Evaluator not found** — If `galileo.luna2` doesn't appear in `list_evaluators()`:
 
 - Verify the Galileo package is installed
+
 - Check server logs for evaluator discovery messages

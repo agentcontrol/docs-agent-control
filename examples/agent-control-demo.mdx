@@ -8,9 +8,13 @@ Complete example demonstrating the Agent Control workflow: creating controls, ru
 ## Overview
 
 This demo shows how to:
+
 1. Create an agent and register it with the Agent Control server
+
 2. Define controls (regex, list-based) and assign them to a policy
+
 3. Run an agent that uses the `@control` decorator with server-side policies
+
 4. Dynamically update controls on the server without redeploying code
 
 ## Prerequisites
@@ -33,7 +37,9 @@ Verify the server is running:
 
 ```bash
 curl http://localhost:8000/health
+
 # Expected: {"status":"healthy","version":"..."}
+
 ```
 
 Install dependencies (if not already done from monorepo root):
@@ -67,10 +73,13 @@ The agent will initialize with `agent_control.init()`, load the assigned policy,
 Update controls on the server without changing code or restarting the agent:
 
 ```bash
+
 # Disable the SSN control (allow SSNs)
+
 uv run python examples/agent_control_demo/update_controls.py --allow-ssn
 
 # Re-enable the SSN control (block SSNs again)
+
 uv run python examples/agent_control_demo/update_controls.py --block-ssn
 ```
 
@@ -93,7 +102,9 @@ Key insight: controls are enforced server-side, so you can update rules in real-
 Controls are defined on the server with scope, selector, evaluator, and action. Example from `setup_controls.py`:
 
 ```python
+
 # Regex control to block SSN in output
+
 control_data = ControlDefinition(
     description="Block SSN patterns in output",
     enabled=True,
@@ -117,16 +128,19 @@ import agent_control
 from agent_control import control, ControlViolationError
 
 # Initialize and connect to server
+
 agent_control.init(
     agent_name="demo-chatbot",
 )
 
 # Apply server-side controls
+
 @control()
 async def chat(message: str) -> str:
     return f"Echo: {message}"
 
 # Handle violations
+
 try:
     response = await chat("user input")
 except ControlViolationError as e:
@@ -164,6 +178,7 @@ Fix:
 curl http://localhost:8000/health
 
 # If not running, start it
+
 make server-run
 ```
 
@@ -190,12 +205,17 @@ make sync
 ## Next Steps
 
 - Explore [Concepts](/concepts) to understand controls, policies, scopes, and evaluators
+
 - Check out [CrewAI example](/examples/crewai) for multi-agent orchestration with controls
+
 - Read [SDK documentation](/sdk/python-sdk) for full API reference
+
 - Try the [LangChain SQL example](/examples/langchain-sql) for LangChain integration
 
 ## Resources
 
 - [Main Documentation](/introduction)
+
 - [SDK Documentation](/sdk/python-sdk)
+
 - [Server Documentation](/reference)
