@@ -1,9 +1,9 @@
 ---
 title: Controls
-description: Understand how controls evaluate steps and apply actions.
+description: Understand how controls work and how to define them.
 ---
 
-![Control Components](./Control.png)
+![Control Components](./Controls.png)
 
 A Control is a protection rule that evaluates agent interactions (inputs/outputs) and takes action based on configured criteria. It defines when to check, what to check, how to evaluate it, and what to do with the results.
 
@@ -13,13 +13,18 @@ Control formula: **Control = Scope (When) + Selector (What) + Evaluator (How) + 
 
 The **Scope** defines which steps trigger the control—acting as a filter to select specific sections of your agent workflow to monitor.
 
-**Fields:**
+Fields:
 
 - `step_types`: List of step types (`['tool', 'llm_inference']`). If null, applies to all types.
+
 - `step_names`: List of exact step names to target (e.g., `['search_db', 'send_email']`)
+
 - `step_name_regex`: Regex pattern for step name matching (e.g., `"^db.*"` matches all "db_" prefixed steps)
+
 - `stages`: When to evaluate - `['pre', 'post']`
+
   - `'pre'`: Check before execution (block bad inputs, prevent prompt injection)
+
   - `'post'`: Check after execution (filter bad outputs, redact PII)
 
 ### Example 1: Apply to all tool steps before execution
@@ -74,18 +79,24 @@ The **Scope** defines which steps trigger the control—acting as a filter to se
 
 The **Selector** specifies which portion of the step's data to extract and pass to the evaluator for analysis. It uses a path specification to navigate the step object.
 
-**Field:**
+Field:
 
 - `path`: Dot-notation path to the data you want to evaluate
 
-**Common Paths:**
+Common Paths:
 
 - `"input"` - Entire input to the step
+
 - `"output"` - Step's output/result
+
 - `"input.query"` - Specific parameter within input
+
 - `"input.user_message"` - User message field
+
 - `"name"` - The step/tool name itself
+
 - `"context.user_id"` - Context metadata
+
 - `"*"` - All available payload data
 
 ### Example 1: Check tool output for PII
@@ -134,9 +145,10 @@ The **Selector** specifies which portion of the step's data to extract and pass 
 
 The **Evaluator** receives the data extracted by the selector and evaluates it against configured rules, returning whether the data matches specified criteria.
 
-**Components:**
+Components:
 
 - `config`: Evaluator-specific configuration, validated against the evaluator's schema
+
 - `metadata`: Optional evaluator identification
 
 ### Example 1: Regex evaluator to detect PII
@@ -171,7 +183,7 @@ The **Evaluator** receives the data extracted by the selector and evaluates it a
 ```json
 {
   "evaluator": {
-    "name": "galileo-luna2",
+    "name": "galileo.luna2",
     "config": {
       "metric": "input_toxicity",
       "operator": "gt",
@@ -194,7 +206,7 @@ The **Evaluator** receives the data extracted by the selector and evaluates it a
 }
 ```
 
-**Custom Evaluators:**
+Custom Evaluators:
 Agent Control supports custom evaluators for domain-specific requirements. See [examples/DeepEval](/examples/deepeval) for a complete example of creating and integrating custom evaluators.
 
 ---
@@ -203,13 +215,20 @@ Agent Control supports custom evaluators for domain-specific requirements. See [
 
 The **Action** defines what happens when the evaluator matches/detects an issue.
 
-**Fields:**
+Fields:
 
 - `decision`: The enforcement action to take
+
   - `"allow"` - Continue execution (useful for allowlist controls)
+
   - `"deny"` - Hard stop execution (blocks the request)
+
+  - `"steer"` - Provides corrective guidance to help agents satisfy control requirement
+
   - `"warn"` - Log a warning but continue execution
+
   - `"log"` - Log the match for observability only
+
 - `metadata`: Optional additional context (JSON object)
 
 ### Important: "Deny Wins" Semantics
@@ -251,6 +270,28 @@ Agent Control uses "deny wins" logic: if **any** enabled control with a `deny` a
 }
 ```
 
+### Example 4: Action with steer and steering context
+
+```json
+{
+  "action": {
+    "decision": "steer",
+    "steering_context": {
+      "message": "Remove PII and rephrase the response without account numbers or SSNs.",
+      "required_actions": [
+        "redact_pii",
+        "generalize_account_details"
+      ]
+    },
+    "metadata": {
+      "reason": "PII detected in output",
+      "severity": "medium",
+      "compliance": "GDPR"
+    }
+  }
+}
+```
+
 ---
 
 ## Complete Control Example
@@ -284,3 +325,126 @@ Putting it all together - a control that blocks Social Security Numbers in tool 
   }
 }
 ```
+
+---
+
+## Defining Controls
+
+You can create and configure controls via the SDK, API, or UI.
+
+### Example: Block PII in Output (Regex)
+
+Via Python SDK:
+
+```python
+from agent_control import AgentControlClient, controls
+
+async with AgentControlClient() as client:
+    await controls.create_control(
+        client,
+        name="block-ssn-output",
+        data={
+            "description": "Block Social Security Numbers in responses",
+            "enabled": True,
+            "execution": "server",
+            "scope": {"step_names": ["generate_response"], "stages": ["post"]},
+            "selector": {"path": "output"},
+            "evaluator": {
+                "name": "regex",
+                "config": {"pattern": r"\\b\\d{3}-\\d{2}-\\d{4}\\b"}
+            },
+            "action": {"decision": "deny"}
+        }
+    )
+```
+
+Via curl:
+
+```bash
+
+# Step 1: Create control
+
+CONTROL_ID=$(curl -X PUT http://localhost:8000/api/v1/controls \
+  -H "Content-Type: application/json" \
+  -d '{"name": "block-ssn-output"}' | jq -r '.control_id')
+
+# Step 2: Set control configuration
+
+curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "description": "Block Social Security Numbers in responses",
+      "enabled": true,
+      "execution": "server",
+      "scope": {"step_names": ["generate_response"], "stages": ["post"]},
+      "selector": {"path": "output"},
+      "evaluator": {
+        "name": "regex",
+        "config": {"pattern": "\\\\b\\\\d{3}-\\\\d{2}-\\\\d{4}\\\\b"}
+      },
+      "action": {"decision": "deny"}
+    }
+  }'
+```
+
+### Example: Block Toxic Input (Luna-2 AI)
+
+Via Python SDK:
+
+```python
+await controls.create_control(
+    client,
+    name="block-toxic-input",
+    data={
+        "description": "Block toxic or harmful user messages",
+        "enabled": True,
+        "execution": "server",
+        "scope": {"step_names": ["process_user_message"], "stages": ["pre"]},
+        "selector": {"path": "input"},
+        "evaluator": {
+            "name": "galileo.luna2",
+            "config": {
+                "metric": "input_toxicity",
+                "operator": "gt",
+                "target_value": 0.5
+            }
+        },
+        "action": {"decision": "deny"}
+    }
+)
+```
+
+Via curl:
+
+```bash
+
+# Create control with Luna-2 evaluator
+
+CONTROL_ID=$(curl -X PUT http://localhost:8000/api/v1/controls \
+  -H "Content-Type: application/json" \
+  -d '{"name": "block-toxic-input"}' | jq -r '.control_id')
+
+curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "description": "Block toxic or harmful user messages",
+      "enabled": true,
+      "execution": "server",
+      "scope": {"step_names": ["process_user_message"], "stages": ["pre"]},
+      "selector": {"path": "input"},
+      "evaluator": {
+        "name": "galileo.luna2",
+        "config": {
+          "metric": "input_toxicity",
+          "operator": "gt",
+          "target_value": 0.5
+        }
+      },
+      "action": {"decision": "deny"}
+    }
+  }'
+```
+
+> **Note**: For the Luna-2 evaluator, set the `GALILEO_API_KEY` environment variable. See the [Reference](/reference#evaluators) for all available evaluators.

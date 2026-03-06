@@ -7,7 +7,7 @@ Add `@control()` to any function to enforce server-managed safety controls on it
 
 - Setting up your environment.
 - Creating two agent controls--`block-ssn-output` and `block-dangerous-sql`--
-to block social security numbers and dangerous SQL queries, respectively.
+  to block social security numbers and dangerous SQL queries, respectively.
 - Decorating an LLM call that asks "What is the capital of France?" and "DROP TABLE users".
 - Returning the answer to the former and blocking the potentially dangerous SQL injection.
 
@@ -41,20 +41,18 @@ uv add agent-control-sdk anthropic  # swap anthropic for openai, etc.
 <Step title="Create setup_controls.py">
 
 ```bash
-cd my-agent 
+cd my-agent
 touch setup_controls.py
 ```
 
-This script registers your agent, creates two controls, groups them in a policy, and assigns the policy to the agent. Copy and paste the following into `setup_controls.py`.
+This script registers your agent, creates two controls, and associates them directly to the agent. Copy and paste the following into `setup_controls.py`.
 
 ```python
-"""One-time setup: create an agent, two controls, and a policy."""
+"""One-time setup: create an agent and two controls, then attach them to the agent."""
 import asyncio
-from agent_control import AgentControlClient
-from agent_control import controls, policies
+from agent_control import AgentControlClient, controls
 
 AGENT_NAME = "my-agent"
-AGENT_ID = "a1b2c3d4-0000-4000-8000-000000000001"  # any stable UUID
 SERVER_URL = "http://localhost:8000"
 
 
@@ -65,7 +63,6 @@ async def main():
             "/api/v1/agents/initAgent",
             json={
                 "agent": {
-                    "agent_id": AGENT_ID,
                     "agent_name": AGENT_NAME,
                     "agent_description": "Demo agent",
                 },
@@ -105,12 +102,9 @@ async def main():
             "action": {"decision": "deny"},
         })
 
-        # 3. Create policy, attach controls, assign to agent
-        policy = await policies.create_policy(client, "my-policy")
-        pid = policy["policy_id"]
-        await policies.add_control_to_policy(client, pid, ssn["control_id"])
-        await policies.add_control_to_policy(client, pid, sql["control_id"])
-        await policies.assign_policy_to_agent(client, AGENT_ID, pid)
+        # 3. Associate controls directly to the agent
+        await client.http_client.post(f"/api/v1/agents/{AGENT_NAME}/controls/{ssn['control_id']}")
+        await client.http_client.post(f"/api/v1/agents/{AGENT_NAME}/controls/{sql['control_id']}")
 
         print(f"Done — agent '{AGENT_NAME}' ready with 2 controls")
 
@@ -119,7 +113,7 @@ asyncio.run(main())
 ```
 
 <Note>
-Agent, control, and policy names must be unique. If you get a 409 conflict, pick new names or [reset the database](#troubleshooting).
+Agent and control names must be unique. If you get a 409 conflict, pick new names or [reset the database](#troubleshooting).
 </Note>
 
 ```bash
@@ -138,12 +132,12 @@ import agent_control
 from agent_control import control, ControlViolationError
 
 AGENT_NAME = "my-agent"
-AGENT_ID = "a1b2c3d4-0000-4000-8000-000000000001"  # must match setup_controls.py
 
 # Initialize once at startup
+
 agent_control.init(
     agent_name=AGENT_NAME,
-    agent_id=AGENT_ID,
+    agent_description="Demo agent",
     server_url="http://localhost:8000",
 )
 
@@ -223,14 +217,16 @@ async def openai_chat(message: str) -> str:
 
 ### 409 Conflict — name already exists
 
-Agent, control, and policy names are unique. Re-running `setup_controls.py` against a database that already has those names will return a `409 Conflict`.
+Agent and control names are unique. Re-running `setup_controls.py` against a database that already has those names will return a `409 Conflict`.
 
-**Option A — pick new names.** Change the name strings in `setup_controls.py` (and update `AGENT_NAME`/`AGENT_ID` in `main.py` to match).
+**Option A — pick new names.** Change the name strings in `setup_controls.py` (and update `AGENT_NAME` in `main.py` to match).
 
 **Option B — reset the database.** From the repo root, stop the server, wipe the Docker volume, and re-run migrations:
 
 ```bash
+
 # stop the running server (Ctrl-C), then:
+
 cd server
 docker compose down -v          # removes the postgres volume
 docker compose up -d            # recreates a fresh database
@@ -241,25 +237,12 @@ make server-run                 # restart the server
 
 Then re-run `setup_controls.py`.
 
-### TypeError: `init()` missing required argument `agent_id`
-
-`agent_control.init()` requires both `agent_name` and `agent_id`. Make sure your `main.py` passes both:
-
-```python
-agent_control.init(
-    agent_name=AGENT_NAME,
-    agent_id=AGENT_ID,          # ← required
-    server_url="http://localhost:8000",
-)
-```
-
 ### 422 Unprocessable Entity on `initAgent`
 
-The `/initAgent` payload must include `agent_id` (a valid UUID string) inside the `agent` object. Double-check your `setup_controls.py` sends it:
+The `/initAgent` payload must include `agent_name` inside the `agent` object. Double-check your `setup_controls.py` sends it:
 
 ```python
 "agent": {
-    "agent_id": AGENT_ID,      # ← must be a UUID string
     "agent_name": AGENT_NAME,
 }
 ```

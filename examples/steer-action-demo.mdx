@@ -1,0 +1,48 @@
+---
+title: Steer Action Demo
+description: Banking transfer agent showcasing allow, deny, warn, and steer actions.
+---
+
+A realistic banking agent that processes wire transfers with compliance controls, fraud detection, and approval workflows.
+
+## What It Demonstrates
+
+- Allow for low-risk transfers
+- Deny for compliance violations (OFAC sanctions, high fraud)
+- Warn for suspicious activity without blocking
+- Steer for approval workflows (2FA, manager approval)
+
+## Prerequisites
+
+- Python 3.12+
+- `uv` installed
+- Agent Control server running
+- `OPENAI_API_KEY` set in your environment
+
+## Run The Demo
+
+```bash
+cd examples/steer_action_demo
+
+# One-time setup
+
+uv run setup_controls.py
+
+# Interactive banking agent
+
+uv run autonomous_agent_demo.py
+```
+
+## Try These Scenarios
+
+1. Simple transfer: "Send $500 to Jane Smith"
+2. Sanctioned destination: "Wire $5,000 to North Korea"
+3. Large transfer: "Transfer $15,000 to contractor in UK"
+
+## Files
+
+| File | Description |
+|:-----|:------------|
+| `setup_controls.py` | Creates the demo controls |
+| `autonomous_agent_demo.py` | Interactive banking agent |
+| `interactive_demo.py` | CLI demo with manual steps |

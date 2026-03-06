@@ -3,7 +3,19 @@ title: Agent Control Demo
 description: Start Agent Control, add server-side controls, and rerun the demo to see blocks in action.
 ---
 
-Protect your AI agent in 4 steps: start the server → run the demo once → add controls → rerun to verify blocking.
+Complete example demonstrating the Agent Control workflow: creating controls, running a controlled agent, and dynamically updating controls without code changes.
+
+## Overview
+
+This demo shows how to:
+
+1. Create an agent and register it with the Agent Control server
+
+2. Define controls (regex, list-based) and assign them to a policy
+
+3. Run an agent that uses the `@control` decorator with server-side policies
+
+4. Dynamically update controls on the server without redeploying code
 
 ## Prerequisites
 
@@ -15,118 +27,195 @@ uv — fast Python package manager
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Docker — for running PostgreSQL
-
-Node.js 18+ — only if you want the web dashboard (optional)
-
-<Steps>
-<Step title="Start the Agent Control server">
-The server stores policies/controls and evaluates agent operations for safety.
+Start the Agent Control server from the monorepo root:
 
 ```bash
-# Clone the repository (contains the server and examples)
-git clone https://github.com/agentcontrol/agent-control.git
-cd agent-control
-
-# Install dependencies (creates/uses the repo environment)
-make sync
-
-# Start PostgreSQL database
-cd server
-docker-compose up -d
-cd ..
-
-# Run database migrations
-make server-alembic-upgrade
-
-# Start the Agent Control server
 make server-run
 ```
 
-✅ Server runs at [http://localhost:8000](http://localhost:8000)
-
-Verify it’s up: open [http://localhost:8000/health](http://localhost:8000/health) and confirm you see `{"status": "ok"}`.
-</Step>
-
-<Step title="Run the demo agent (no server-side controls yet)">
-This demo agent includes @control() decorators and runs a set of test scenarios.
+Verify the server is running:
 
 ```bash
-uv run python examples/agent_control_demo/demo_agent.py
+curl http://localhost:8000/health
+
+# Expected: {"status":"healthy","version":"..."}
+
 ```
 
-At this point you may see a message like “No controls returned from server”. That’s expected until you add controls.
-</Step>
-
-<Step title="Start the web dashboard (optional)">
-If you want to see controls in the UI, start the dashboard in a separate terminal:
+Install dependencies (if not already done from monorepo root):
 
 ```bash
-cd ui
-pnpm install
-pnpm dev
+make sync
 ```
 
-✅ Dashboard runs at [http://localhost:4000](http://localhost:4000)
-
-If you open the UI now, you won't see any controls yet—those are created in the next step.
-
-![Dashboard with no controls yet](./no-controls-at-startup.png)
-
-The dashboard starts with an empty state because no controls or policies have been registered with the server yet. Once you add controls in the next step, they appear here automatically.
-</Step>
-
-<Step title="Add controls + policy (server-side)">
-Run the included setup script to:
-
-- Register the demo agent (demo-chatbot)
-- Create two controls:
-       - block-ssn-output (regex) — blocks SSNs in output (post stage)
-       - block-dangerous-sql (list) — blocks dangerous SQL keywords in input (pre stage)
-- Create a policy (demo-policy) and assign it to the demo agent
+<Steps>
+<Step title="Create controls on the server">
+Run the setup script to create the agent, controls, and policy:
 
 ```bash
 uv run python examples/agent_control_demo/setup_controls.py
 ```
 
-You should see output confirming control creation, policy creation, and assignment to the agent.
+This creates a demo agent (`demo-chatbot`), two controls (`block-ssn-output`, `block-banned-words`), and a policy assigned to the agent.
 </Step>
 
-<Step title="Rerun the demo agent (controls loaded from the server)">
-Run the demo again. This time it should load controls from the server and block unsafe behavior.
+<Step title="Run the demo agent">
+Start the agent that uses server-side controls:
 
 ```bash
 uv run python examples/agent_control_demo/demo_agent.py
 ```
 
-✅ Expected behavior on rerun:
+The agent will initialize with `agent_control.init()`, load the assigned policy, apply `@control()` decorators, and run test scenarios that demonstrate allow/deny behavior.
+</Step>
 
-- Safe requests pass through
-- 🚫 Dangerous SQL (e.g., DROP TABLE, DELETE FROM …) is blocked before execution (pre)
-- 🚫 SSNs in the response are blocked after execution (post)
+<Step title="Update controls dynamically">
+Update controls on the server without changing code or restarting the agent:
 
-With controls loaded, the UI will show the configured controls and their monitoring view:
+```bash
 
-![Controls added in the UI](./controls-added.png)
+# Disable the SSN control (allow SSNs)
 
-The controls list view displays each registered control with its name, evaluation stage (`pre` or `post`), evaluator type, and the policy it belongs to. In this demo, you should see `block-ssn-output` (post stage, regex evaluator) and `block-dangerous-sql` (pre stage, list evaluator), both assigned to `demo-policy`.
+uv run python examples/agent_control_demo/update_controls.py --allow-ssn
 
-![Control monitoring dashboard](./monitor-controls.png)
+# Re-enable the SSN control (block SSNs again)
 
-The monitoring dashboard shows real-time activity for each control — including how many requests were evaluated, how many were blocked, and the pass/block ratio. Use this view to verify that dangerous SQL queries and SSN-containing responses are being caught as expected.
+uv run python examples/agent_control_demo/update_controls.py --block-ssn
+```
+
+Key insight: controls are enforced server-side, so you can update rules in real-time without redeploying code.
 </Step>
 </Steps>
 
-## Optional: Update Controls and Rerun
+## Files
 
-To modify the demo controls (for example, add more blocked SQL keywords), run:
+| File | Description |
+|:-----|:------------|
+| `setup_controls.py` | Creates agent, controls, policy, and assigns policy to agent |
+| `demo_agent.py` | Demo agent using `@control` decorator with server-side policies |
+| `update_controls.py` | Updates controls dynamically (enable/disable SSN blocking) |
 
-```bash
-uv run python examples/agent_control_demo/update_controls.py
+## How It Works
+
+### 1. Server-Side Control Definition
+
+Controls are defined on the server with scope, selector, evaluator, and action. Example from `setup_controls.py`:
+
+```python
+
+# Regex control to block SSN in output
+
+control_data = ControlDefinition(
+    description="Block SSN patterns in output",
+    enabled=True,
+    execution="server",
+    scope=ControlScope(step_types=["tool"], stages=["post"]),
+    selector=ControlSelector(path="output"),
+    evaluator=EvaluatorConfig(
+        name="regex",
+        config={"pattern": r"\b\d{3}-\d{2}-\d{4}\b"}
+    ),
+    action=ControlAction(decision="deny")
+)
 ```
 
-Then rerun the demo agent to see the updated control behavior:
+### 2. Agent Integration
+
+The agent uses the `@control()` decorator to fetch its policy from the server and enforce controls before/after execution. Example from `demo_agent.py`:
+
+```python
+import agent_control
+from agent_control import control, ControlViolationError
+
+# Initialize and connect to server
+
+agent_control.init(
+    agent_name="demo-chatbot",
+)
+
+# Apply server-side controls
+
+@control()
+async def chat(message: str) -> str:
+    return f"Echo: {message}"
+
+# Handle violations
+
+try:
+    response = await chat("user input")
+except ControlViolationError as e:
+    print(f"Blocked: {e.message}")
+```
+
+### 3. Dynamic Updates
+
+Controls can be updated on the server without code changes. You can enable/disable controls, update patterns, change decisions, or add new controls to policies.
+
+## Configuration
+
+All scripts use the same agent configuration:
+
+```python
+AGENT_NAME = "demo-chatbot"
+SERVER_URL = os.getenv("AGENT_CONTROL_URL", "http://localhost:8000")
+```
+
+Set `AGENT_CONTROL_URL` to connect to a different server:
 
 ```bash
-uv run python examples/agent_control_demo/demo_agent.py
+export AGENT_CONTROL_URL=http://your-server:8000
 ```
+
+## Troubleshooting
+
+### Server Connection Issues
+
+Error: `Failed to connect to server`
+
+Fix:
+
+```bash
+curl http://localhost:8000/health
+
+# If not running, start it
+
+make server-run
+```
+
+### Agent Not Found
+
+Error: `Agent not found` when running `demo_agent.py`
+
+Fix: Run `setup_controls.py` first:
+
+```bash
+uv run python examples/agent_control_demo/setup_controls.py
+```
+
+### Import Errors
+
+Error: `ModuleNotFoundError: No module named 'agent_control'`
+
+Fix: Install dependencies from monorepo root:
+
+```bash
+make sync
+```
+
+## Next Steps
+
+- Explore [Concepts](/concepts) to understand controls, policies, scopes, and evaluators
+
+- Check out [CrewAI example](/examples/crewai) for multi-agent orchestration with controls
+
+- Read [SDK documentation](/sdk/python-sdk) for full API reference
+
+- Try the [LangChain SQL example](/examples/langchain-sql) for LangChain integration
+
+## Resources
+
+- [Main Documentation](/introduction)
+
+- [SDK Documentation](/sdk/python-sdk)
+
+- [Server Documentation](/reference)
