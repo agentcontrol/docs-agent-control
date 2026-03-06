@@ -153,7 +153,7 @@
     ]
   },
   "seo": {
-    "indexing": "none",
+    "indexing": "all",
     "metatags": {
       "og:site_name": "Agent Control Docs",
       "og:type": "website",
