@@ -153,11 +153,12 @@
     ]
   },
   "seo": {
-    "indexing": "all",
+    "indexing": "none",
     "metatags": {
       "og:site_name": "Agent Control Docs",
       "og:type": "website",
-      "twitter:card": "summary_large_image"
+      "twitter:card": "summary_large_image",
+      "robots": "noindex, nofollow"
     }
   },
   "logo": {
