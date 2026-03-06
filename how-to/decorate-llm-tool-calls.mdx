@@ -1,13 +1,12 @@
 ---
-title: Decorate LLM tool calls
-description: Learn how to decorate LLM tool calls with Agent Control.
+title: "Decorate LLM and tool calls"
+description: "Learn how to decorate LLM and tool calls with Agent Control."
 ---
 
 Add `@control()` to any function to enforce server-managed safety controls on its inputs and outputs. This guide walks you through:
 
 - Setting up your environment.
-- Creating two agent controls--`block-ssn-output` and `block-dangerous-sql`--
-  to block social security numbers and dangerous SQL queries, respectively.
+- Creating two agent controls--`block-ssn-output` and `block-dangerous-sql`-- to block social security numbers and dangerous SQL queries, respectively.
 - Decorating an LLM call that asks "What is the capital of France?" and "DROP TABLE users".
 - Returning the answer to the former and blocking the potentially dangerous SQL injection.
 
@@ -16,167 +15,156 @@ Add `@control()` to any function to enforce server-managed safety controls on it
 - Python 3.12+, [uv](https://docs.astral.sh/uv/), Docker
 
 <Steps>
-<Step title="Start the server">
+  <Step title="Start the server">
+    ```bash
+    git clone https://github.com/agentcontrol/agent-control.git
+    cd agent-control
+    make sync
+    
+    cd server && docker-compose up -d && cd ..
+    make server-alembic-upgrade
+    make server-run                    # leave running — use a new terminal below
+    ```
+  </Step>
+  <Step title="Create your project">
+    ```bash
+    mkdir my-agent && cd my-agent
+    uv init
+    uv add agent-control-sdk anthropic  # swap anthropic for openai, etc.
+    ```
+  </Step>
+  <Step title="Create setup_controls.py">
+    ```bash
+    cd my-agent
+    touch setup_controls.py
+    ```
 
-```bash
-git clone https://github.com/agentcontrol/agent-control.git
-cd agent-control
-make sync
+    This script registers your agent, creates two controls, and associates them directly to the agent. Copy and paste the following into `setup_controls.py`.
 
-cd server && docker-compose up -d && cd ..
-make server-alembic-upgrade
-make server-run                    # leave running — use a new terminal below
-```
-
-</Step>
-<Step title="Create your project">
-
-```bash
-mkdir my-agent && cd my-agent
-uv init
-uv add agent-control-sdk anthropic  # swap anthropic for openai, etc.
-```
-
-</Step>
-<Step title="Create setup_controls.py">
-
-```bash
-cd my-agent
-touch setup_controls.py
-```
-
-This script registers your agent, creates two controls, and associates them directly to the agent. Copy and paste the following into `setup_controls.py`.
-
-```python
-"""One-time setup: create an agent and two controls, then attach them to the agent."""
-import asyncio
-from agent_control import AgentControlClient, controls
-
-AGENT_NAME = "my-agent"
-SERVER_URL = "http://localhost:8000"
-
-
-async def main():
-    async with AgentControlClient(base_url=SERVER_URL) as client:
-        # 1. Register the agent
-        resp = await client.http_client.post(
-            "/api/v1/agents/initAgent",
-            json={
-                "agent": {
-                    "agent_name": AGENT_NAME,
-                    "agent_description": "Demo agent",
+    ```python
+    """One-time setup: create an agent and two controls, then attach them to the agent."""
+    import asyncio
+    from agent_control import AgentControlClient, controls
+    
+    AGENT_NAME = "my-agent"
+    SERVER_URL = "http://localhost:8000"
+    
+    
+    async def main():
+        async with AgentControlClient(base_url=SERVER_URL) as client:
+            # 1. Register the agent
+            resp = await client.http_client.post(
+                "/api/v1/agents/initAgent",
+                json={
+                    "agent": {
+                        "agent_name": AGENT_NAME,
+                        "agent_description": "Demo agent",
+                    },
+                    "steps": [],
                 },
-                "steps": [],
-            },
-        )
-        resp.raise_for_status()
-
-        # 2. Create controls
-        ssn = await controls.create_control(client, "block-ssn-output", data={
-            "enabled": True,
-            "execution": "server",
-            "scope": {"step_types": ["llm"], "stages": ["post"]},
-            "selector": {"path": "output"},
-            "evaluator": {
-                "name": "regex",
-                "config": {"pattern": r"\b\d{3}-\d{2}-\d{4}\b"},
-            },
-            "action": {"decision": "deny"},
-        })
-
-        sql = await controls.create_control(client, "block-dangerous-sql", data={
-            "enabled": True,
-            "execution": "server",
-            "scope": {"step_types": ["llm"], "stages": ["pre"]},
-            "selector": {"path": "input"},
-            "evaluator": {
-                "name": "list",
-                "config": {
-                    "values": ["DROP", "DELETE", "TRUNCATE"],
-                    "logic": "any",
-                    "match_on": "match",
-                    "match_mode": "contains",
-                    "case_sensitive": False,
+            )
+            resp.raise_for_status()
+    
+            # 2. Create controls
+            ssn = await controls.create_control(client, "block-ssn-output", data={
+                "enabled": True,
+                "execution": "server",
+                "scope": {"step_types": ["llm"], "stages": ["post"]},
+                "selector": {"path": "output"},
+                "evaluator": {
+                    "name": "regex",
+                    "config": {"pattern": r"\b\d{3}-\d{2}-\d{4}\b"},
                 },
-            },
-            "action": {"decision": "deny"},
-        })
+                "action": {"decision": "deny"},
+            })
+    
+            sql = await controls.create_control(client, "block-dangerous-sql", data={
+                "enabled": True,
+                "execution": "server",
+                "scope": {"step_types": ["llm"], "stages": ["pre"]},
+                "selector": {"path": "input"},
+                "evaluator": {
+                    "name": "list",
+                    "config": {
+                        "values": ["DROP", "DELETE", "TRUNCATE"],
+                        "logic": "any",
+                        "match_on": "match",
+                        "match_mode": "contains",
+                        "case_sensitive": False,
+                    },
+                },
+                "action": {"decision": "deny"},
+            })
+    
+            # 3. Associate controls directly to the agent
+            await client.http_client.post(f"/api/v1/agents/{AGENT_NAME}/controls/{ssn['control_id']}")
+            await client.http_client.post(f"/api/v1/agents/{AGENT_NAME}/controls/{sql['control_id']}")
+    
+            print(f"Done — agent '{AGENT_NAME}' ready with 2 controls")
+    
+    
+    asyncio.run(main())
+    ```
 
-        # 3. Associate controls directly to the agent
-        await client.http_client.post(f"/api/v1/agents/{AGENT_NAME}/controls/{ssn['control_id']}")
-        await client.http_client.post(f"/api/v1/agents/{AGENT_NAME}/controls/{sql['control_id']}")
+    <Note>
+      Agent and control names must be unique. If you get a 409 conflict, pick new names or [reset the database](#troubleshooting).
+    </Note>
+    ```bash
+    uv run python setup_controls.py
+    ```
+  </Step>
+  <Step title="Create main.py">
+    Three things to add to a normal LLM script: `import`, `init()`, `@control()`.
 
-        print(f"Done — agent '{AGENT_NAME}' ready with 2 controls")
-
-
-asyncio.run(main())
-```
-
-<Note>
-Agent and control names must be unique. If you get a 409 conflict, pick new names or [reset the database](#troubleshooting).
-</Note>
-
-```bash
-uv run python setup_controls.py
-```
-
-</Step>
-<Step title="Create main.py">
-
-Three things to add to a normal LLM script: `import`, `init()`, `@control()`.
-
-```python
-import asyncio
-import anthropic
-import agent_control
-from agent_control import control, ControlViolationError
-
-AGENT_NAME = "my-agent"
-
-# Initialize once at startup
-
-agent_control.init(
-    agent_name=AGENT_NAME,
-    agent_description="Demo agent",
-    server_url="http://localhost:8000",
-)
-
-client = anthropic.Anthropic()          # uses ANTHROPIC_API_KEY env var
-
-@control()
-async def chat(message: str) -> str:
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=1024,
-        messages=[{"role": "user", "content": message}],
+    ```python
+    import asyncio
+    import anthropic
+    import agent_control
+    from agent_control import control, ControlViolationError
+    
+    AGENT_NAME = "my-agent"
+    
+    # Initialize once at startup
+    
+    agent_control.init(
+        agent_name=AGENT_NAME,
+        agent_description="Demo agent",
+        server_url="http://localhost:8000",
     )
-    return response.content[0].text
+    
+    client = anthropic.Anthropic()          # uses ANTHROPIC_API_KEY env var
+    
+    @control()
+    async def chat(message: str) -> str:
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            messages=[{"role": "user", "content": message}],
+        )
+        return response.content[0].text
+    
+    async def main():
+        for prompt in ["What is the capital of France?", "DROP TABLE users"]:
+            try:
+                result = await chat(prompt)
+                print(f"✅ {prompt} → {result[:60]}")
+            except ControlViolationError as e:
+                print(f"🚫 {prompt} → blocked by {e.control_name}")
+    
+    asyncio.run(main())
+    ```
+  </Step>
+  <Step title="Run it">
+    ```bash
+    export ANTHROPIC_API_KEY="your-key"
+    uv run python main.py
+    ```
 
-async def main():
-    for prompt in ["What is the capital of France?", "DROP TABLE users"]:
-        try:
-            result = await chat(prompt)
-            print(f"✅ {prompt} → {result[:60]}")
-        except ControlViolationError as e:
-            print(f"🚫 {prompt} → blocked by {e.control_name}")
-
-asyncio.run(main())
-```
-
-</Step>
-<Step title="Run it">
-
-```bash
-export ANTHROPIC_API_KEY="your-key"
-uv run python main.py
-```
-
-```bash
-✅ What is the capital of France? → The capital of France is Paris.
-🚫 DROP TABLE users → blocked by block-dangerous-sql
-```
-
-</Step>
+    ```bash
+    ✅ What is the capital of France? → The capital of France is Paris.
+    🚫 DROP TABLE users → blocked by block-dangerous-sql
+    ```
+  </Step>
 </Steps>
 
 ---
