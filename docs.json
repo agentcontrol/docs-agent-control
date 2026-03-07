@@ -94,18 +94,6 @@
             ]
           },
           {
-            "group": "Reference",
-            "pages": [
-              "reference",
-              "sdk/python-sdk",
-              "sdk/typescript-sdk",
-              "server",
-              "engine",
-              "models",
-              "evaluators"
-            ]
-          },
-          {
             "group": "More",
             "pages": [
               "testing",
@@ -149,6 +137,23 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Reference",
+            "pages": [
+              "reference",
+              "sdk/python-sdk",
+              "sdk/typescript-sdk",
+              "server",
+              "engine",
+              "models",
+              "evaluators"
+            ]
+          }
+        ]
       }
     ]
   },
@@ -170,9 +175,9 @@
   },
   "navbar": {
     "primary": {
-      "type": "button",
-      "label": "Get Started",
-      "href": "https://example.com"
+      "type": "github",
+      "label": "Go to Repo",
+      "href": "https://github.com/agentcontrol/agent-control"
     }
   },
   "footer": {
@@ -181,11 +186,11 @@
         "items": [
           {
             "label": "Home",
-            "href": "https://example.com"
+            "href": "/"
           },
           {
-            "label": "Documentation",
-            "href": "/"
+            "label": "Go to repo",
+            "href": "https://github.com/agentcontrol/agent-control"
           }
         ]
       }
