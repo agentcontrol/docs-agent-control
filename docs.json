@@ -14,7 +14,7 @@
   "fonts": {
     "family": "Geist"
   },
-  "favicon": "/favicon.png",
+  "favicon": "/images/AgentControl-Final-Black.svg",
   "navigation": {
     "tabs": [
       {
@@ -178,7 +178,8 @@
       "type": "github",
       "label": "Go to Repo",
       "href": "https://github.com/agentcontrol/agent-control"
-    }
+    },
+    "links": []
   },
   "footer": {
     "links": [
