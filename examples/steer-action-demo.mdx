@@ -3,46 +3,143 @@ title: Steer Action Demo
 description: Banking transfer agent showcasing allow, deny, warn, and steer actions.
 ---
 
-A realistic banking agent that processes wire transfers with compliance controls, fraud detection, and approval workflows.
+A realistic AI banking agent that processes wire transfers with compliance controls, fraud detection, and approval workflows.
 
-## What It Demonstrates
+## What This Demonstrates
 
-- Allow for low-risk transfers
-- Deny for compliance violations (OFAC sanctions, high fraud)
-- Warn for suspicious activity without blocking
-- Steer for approval workflows (2FA, manager approval)
+This example shows all three AgentControl action types in a real-world banking scenario:
 
-## Prerequisites
+- Allow: Auto-approve simple, low-risk transfers
+- Deny: Hard-block compliance violations (OFAC sanctions, high fraud)
+- Warn: Log suspicious activity without blocking (new recipients)
+- Steer: Guide agent through approval workflows (2FA, manager approval)
 
-- Python 3.12+
-- `uv` installed
-- Agent Control server running
-- `OPENAI_API_KEY` set in your environment
+## Understanding Steer Actions
 
-## Run The Demo
+Steer is a non-fatal control signal. Unlike deny, steer provides corrective guidance so the agent can fix the issue and retry.
+
+Key difference from deny:
+
+- Deny = You cannot do this (permanent block)
+- Steer = You need to do X first (correctable)
+
+## Demo Flow
+
+```
+Request Transfer → Steer Triggered → Correct Issue → Retry Transfer → Allow Success
+```
+
+## Quick Start
+
+### Prerequisites
+
+1. Start the AgentControl server
+2. Set your OpenAI API key: `export OPENAI_API_KEY="your-key"`
+
+### Run the Demo
 
 ```bash
 cd examples/steer_action_demo
 
-# One-time setup
-
+# 1. Create the controls (one-time setup)
 uv run setup_controls.py
 
-# Interactive banking agent
-
+# 2. Run the interactive banking agent
 uv run autonomous_agent_demo.py
 ```
 
 ## Try These Scenarios
 
-1. Simple transfer: "Send $500 to Jane Smith"
-2. Sanctioned destination: "Wire $5,000 to North Korea"
-3. Large transfer: "Transfer $15,000 to contractor in UK"
+### 1. Simple Transfer (Auto-Approved)
+
+"Send $500 to Jane Smith"
+
+Expected: Automatically approved - no controls triggered
+
+### 2. Sanctioned Country (Blocked)
+
+"Wire $5,000 to North Korea"
+
+Expected: Hard blocked - OFAC compliance violation
+
+### 3. Large Transfer (Requires Approval)
+
+"Transfer $15,000 to contractor in UK"
+
+Expected:
+
+1. Agent requests 2FA code
+2. Agent asks for business justification
+3. Agent requests manager approval
+4. Transfer completes after approvals
+
+## What You Will Learn
+
+- When to use deny vs warn vs steer actions
+- How to integrate human feedback (2FA, approvals) into agent workflows
+- How structured steering context enables deterministic agent workflows
+- Real-world compliance patterns (OFAC, AML, fraud prevention)
+- The steer to correct to retry to allow lifecycle
+
+## How It Works
+
+The agent uses AgentControl to gate wire transfers through five controls:
+
+| Control | Type | Triggers When |
+|---|---|---|
+| OFAC Sanctions | Deny | Destination is sanctioned country |
+| High Fraud | Deny | Fraud score > 0.8 |
+| New Recipient | Warn | Recipient not in known list |
+| 2FA Required | Steer | Amount >= 10,000 without 2FA |
+| Manager Approval | Steer | Amount >= 10,000 without approval |
+
+### Structured Steering Context
+
+Steer controls provide structured JSON guidance for deterministic workflows:
+
+```json
+{
+  "required_actions": ["request_2fa", "verify_2fa"],
+  "retry_flags": {
+    "verified_2fa": true
+  },
+  "reason": "Large transfer requires identity verification via 2FA"
+}
+```
+
+For multi-step workflows:
+
+```json
+{
+  "required_actions": ["justification", "approval"],
+  "steps": [
+    {
+      "step": 1,
+      "action": "justification",
+      "description": "Request business justification from user"
+    },
+    {
+      "step": 2,
+      "action": "approval",
+      "description": "Submit to manager for approval"
+    }
+  ],
+  "retry_flags": {
+    "manager_approved": true,
+    "justification": "<collected_from_user>"
+  },
+  "reason": "Transfer exceeds daily limit - requires approval"
+}
+```
+
+Key fields:
+
+- `required_actions`: list of actions the agent must complete
+- `retry_flags`: flags to set when retrying after correction
+- `reason`: human-readable explanation
+- `steps`: optional sequential workflow steps with descriptions
 
 ## Files
 
-| File | Description |
-|:-----|:------------|
-| `setup_controls.py` | Creates the demo controls |
-| `autonomous_agent_demo.py` | Interactive banking agent |
-| `interactive_demo.py` | CLI demo with manual steps |
+- `setup_controls.py` - Creates the five banking controls (deny, warn, steer)
+- `autonomous_agent_demo.py` - Interactive agent with deterministic steer handling

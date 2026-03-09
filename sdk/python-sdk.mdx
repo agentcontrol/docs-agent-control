@@ -2,7 +2,8 @@
 title: Python SDK
 description: Unified Python SDK for Agent Control with protection, monitoring, and rule enforcement.
 ---
-Unified Python SDK for Agent Control - providing agent protection, monitoring, and rule enforcement in one clean package.
+
+Unified Python SDK for Agent Control, providing agent protection, monitoring, and rule enforcement in one package.
 
 ## Installation
 
@@ -17,13 +18,11 @@ pip install agent-control-sdk
 ```python
 import agent_control
 
-# Initialize at the base of your agent
 agent_control.init(
-    agent_name="My Customer Service Bot",
-    agent_id="550e8400-e29b-41d4-a716-446655440000"
+    agent_name="customer-service-bot",
+    agent_description="My Customer Service Bot",
 )
 
-# Use the control decorator
 from agent_control import control
 
 @control()
@@ -37,14 +36,12 @@ async def handle_message(message: str):
 import agent_control
 
 agent_control.init(
-    agent_name="Customer Service Bot",
-    agent_id="550e8400-e29b-41d4-a716-446655440000",
+    agent_name="customer-service-bot",
     agent_description="Handles customer inquiries and support",
     agent_version="2.1.0",
     server_url="http://localhost:8000",
-    # Add any custom metadata
     team="customer-success",
-    environment="production"
+    environment="production",
 )
 ```
 
@@ -52,20 +49,18 @@ agent_control.init(
 
 ### 1. Simple Initialization
 
-One line to set up your agent with full protection:
+One call sets up your agent:
 
 ```python
-agent_control.init(
-    agent_name="...",
-    agent_id="550e8400-e29b-41d4-a716-446655440000",
-)
+agent_control.init(agent_name="customer-service-bot")
 ```
 
 This automatically:
 
 - Creates an Agent instance with your metadata
-- Discovers and loads `rules.yaml`
 - Registers with the Agent Control server
+- Fetches controls from the server
+- Auto-discovers and loads local `controls.yaml` as a fallback
 - Enables the `@control()` decorator
 
 ### 2. Decorator-Based Protection
@@ -84,18 +79,17 @@ Use the client directly for custom workflows:
 
 ```python
 from agent_control import AgentControlClient
+import agent_control
 
 async with AgentControlClient() as client:
-    # Check server health
     health = await client.health_check()
     print(f"Server status: {health['status']}")
-    
-    # Evaluate a step
+
     result = await agent_control.evaluation.check_evaluation(
         client,
-        agent_uuid="550e8400-e29b-41d4-a716-446655440000",
-        step={"type": "llm_inference", "input": "User input here"},
-        stage="pre"
+        agent_name="customer-service-bot",
+        step={"type": "llm", "input": "User input here"},
+        stage="pre",
     )
 ```
 
@@ -106,7 +100,6 @@ Access your agent information:
 ```python
 agent = agent_control.current_agent()
 print(f"Agent: {agent.agent_name}")
-print(f"ID: {agent.agent_id}")
 print(f"Version: {agent.agent_version}")
 ```
 
@@ -117,35 +110,27 @@ import asyncio
 import agent_control
 from agent_control import control, ControlViolationError
 
-# Initialize
 agent_control.init(
-    agent_name="Customer Support Bot",
-    agent_id="550e8400-e29b-41d4-a716-446655440000",
-    agent_version="1.0.0"
+    agent_name="customer-support-bot",
+    agent_description="Customer Support Bot",
+    agent_version="1.0.0",
 )
 
-# Protect with server-defined controls
 @control()
 async def handle_message(message: str) -> str:
-    # Automatically checked against server-side controls
     return f"Processed: {message}"
 
 @control()
 async def generate_response(query: str) -> str:
-    # Output is automatically evaluated
     return f"Response with SSN: 123-45-6789"
 
-# Use the functions
 async def main():
     try:
-        # Safe input
         result1 = await handle_message("Hello, I need help")
         print(result1)
-        
-        # Output with PII (may be blocked by controls)
+
         result2 = await generate_response("Get user info")
         print(result2)
-        
     except ControlViolationError as e:
         print(f"Blocked by control '{e.control_name}': {e.message}")
 
@@ -161,42 +146,51 @@ asyncio.run(main())
 ```python
 def init(
     agent_name: str,
-    agent_id: str | UUID,
-    agent_description: Optional[str] = None,
-    agent_version: Optional[str] = None,
-    server_url: Optional[str] = None,
-    rules_file: Optional[str] = None,
-    **kwargs
+    agent_description: str | None = None,
+    agent_version: str | None = None,
+    server_url: str | None = None,
+    api_key: str | None = None,
+    controls_file: str | None = None,
+    steps: list[dict] | None = None,
+    conflict_mode: Literal["strict", "overwrite"] = "overwrite",
+    observability_enabled: bool | None = None,
+    log_config: dict[str, Any] | None = None,
+    policy_refresh_interval_seconds: int = 60,
+    **kwargs: object,
 ) -> Agent:
 ```
 
-Initialize Agent Control with your agent's information.
-
 **Parameters:**
 
-- `agent_name`: Human-readable name
-- `agent_id`: UUID string (or UUID instance)
+- `agent_name`: Unique identifier for the agent (normalized to lowercase)
 - `agent_description`: Optional description
 - `agent_version`: Optional version string
-- `server_url`: Optional server URL (defaults to `AGENT_CONTROL_URL` env var)
-- `rules_file`: Optional rules file path (auto-discovered if not provided)
+- `server_url`: Optional server URL (defaults to `AGENT_CONTROL_URL`)
+- `api_key`: Optional API key (defaults to `AGENT_CONTROL_API_KEY`)
+- `controls_file`: Optional explicit path to `controls.yaml`
+- `steps`: Optional list of step schemas to register
+- `conflict_mode`: Init registration conflict mode (`strict` or `overwrite`)
+- `observability_enabled`: Optional observability toggle
+- `log_config`: SDK logging config
+- `policy_refresh_interval_seconds`: Background controls refresh interval; set to `0` to disable
 - `**kwargs`: Additional metadata
 
-**Returns:** `Agent` instance
+When background refresh is enabled, the SDK refreshes control snapshots via `GET /agents/{agent_name}/controls`. On refresh failures, it keeps the previous snapshot (fail-open behavior).
 
 ### Decorator
 
 #### `@control()`
 
 ```python
-def control(policy: Optional[str] = None):
+def control(policy: str | None = None, step_name: str | None = None):
 ```
 
 Decorator to protect a function with server-defined controls.
 
 **Parameters:**
 
-- `policy`: Optional policy name to use (defaults to agent's assigned policy)
+- `policy`: Optional policy label for code readability when multiple policies exist
+- `step_name`: Optional step name override for the registered step
 
 **Example:**
 
@@ -204,12 +198,12 @@ Decorator to protect a function with server-defined controls.
 @control()
 async def my_func(text: str):
     return text
-
-# Or with specific policy
-@control(policy="strict-policy")
-async def sensitive_func(data: str):
-    return data
 ```
+
+### Exceptions
+
+- `ControlViolationError` for `deny` actions
+- `ControlSteerError` for `steer` actions with a steering context
 
 ### Client
 
@@ -220,16 +214,14 @@ class AgentControlClient:
     def __init__(
         self,
         base_url: str = "http://localhost:8000",
-        api_key: Optional[str] = None,
-        timeout: float = 30.0
+        api_key: str | None = None,
+        timeout: float = 30.0,
     ):
 ```
 
-Async HTTP client for Agent Control server.
-
 **Methods:**
 
-- `health_check()` - Check server health
+- `health_check()`
 - Use with module functions like `agent_control.agents.*`, `agent_control.controls.*`, etc.
 
 **Example:**
@@ -247,161 +239,104 @@ async with AgentControlClient(base_url="http://server") as client:
 
 If `agent-control-models` is installed, these classes are available:
 
-- `Agent` - Agent metadata
-- `ProtectionRequest` - Protection request model
-- `ProtectionResult` - Protection result with helper methods
-- `HealthResponse` - Health check response
+- `Agent`
+- `ProtectionRequest`
+- `ProtectionResult`
+- `HealthResponse`
 
 ## Configuration
 
 ### Environment Variables
 
-- `AGENT_CONTROL_URL` - Server URL (default: `http://localhost:8000`)
-- `AGENT_CONTROL_API_KEY` - API key for authentication (optional)
+- `AGENT_CONTROL_URL` (default: `http://localhost:8000`)
+- `AGENT_CONTROL_API_KEY` (optional)
 
 ### Server-Defined Controls
 
 Controls are defined on the server via the API or web dashboard, not in code. This keeps security policies centrally managed and allows updating controls without redeploying your application.
 
-See the [Reference Guide](/reference) for complete control configuration documentation.
-
 ## Package Name
 
-This package is named `agent-control-sdk` (with hyphen in PyPI) and imported as `agent_control` (with underscore in Python):
+This package is named `agent-control-sdk` (PyPI) and imported as `agent_control`:
 
 ```bash
-# Install (uses hyphen)
 pip install agent-control-sdk
-
-# Import (uses underscore)
-import agent_control
 ```
-
-Basic usage:
 
 ```python
 import agent_control
-from agent_control import control, ControlViolationError
-
-agent_control.init(
-    agent_name="...",
-    agent_id="550e8400-e29b-41d4-a716-446655440000",
-)
-
-@control()
-async def handle(message: str):
-    return message
 ```
 
 ## SDK Logging
 
-The SDK uses Python's standard `logging` module with loggers under the `agent_control.*` namespace. Following library best practices, the SDK only adds a NullHandler - your application controls where logs go and how they're formatted.
+The SDK uses Python's standard `logging` module with loggers under the `agent_control.*` namespace.
 
-### Configuring SDK Logs in Your Application
-
-#### Option 1: Standard Python logging configuration (recommended)
+### Configuring SDK Logs
 
 ```python
 import logging
 
-# Basic configuration
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
 )
 
-# Set agent_control logs to DEBUG
 logging.getLogger('agent_control').setLevel(logging.DEBUG)
 ```
 
-#### Option 2: SDK settings (control log categories)
+### SDK Settings (Log Categories)
 
 ```python
 from agent_control.settings import configure_settings
 
-# Configure which categories of logs the SDK emits
 configure_settings(
-    log_enabled=True,           # Master switch for all SDK logging
-    log_span_start=True,        # Emit span start logs
-    log_span_end=True,          # Emit span end logs
-    log_control_eval=True,      # Emit control evaluation logs
+    log_enabled=True,
+    log_span_start=True,
+    log_span_end=True,
+    log_control_eval=True,
 )
 ```
 
-### Controlling What the SDK Logs
-
-The SDK provides behavioral settings to control which categories of logs are emitted:
-
-```python
-from agent_control.settings import configure_settings
-
-# Disable specific log categories
-configure_settings(
-    log_control_eval=False,  # Don't emit per-control evaluation logs
-    log_span_start=False,    # Don't emit span start logs
-)
-```
-
-These behavioral settings work independently of log levels:
-
-- **Behavioral settings**: Control which categories of logs the SDK emits
-- **Log levels**: Control which logs are displayed (via Python's logging module)
-
-### Logging Environment Variables
-
-Configure SDK logging via environment variables:
+### Environment Variables
 
 ```bash
-# Behavioral settings (what to log)
 export AGENT_CONTROL_LOG_ENABLED=true
 export AGENT_CONTROL_LOG_SPAN_START=true
 export AGENT_CONTROL_LOG_SPAN_END=true
 export AGENT_CONTROL_LOG_CONTROL_EVAL=true
 ```
 
-### Using SDK Loggers in Your Code
-
-If you're extending the SDK or want consistent logging:
+### Using SDK Loggers
 
 ```python
 from agent_control import get_logger
 
-# Creates logger under agent_control namespace
 logger = get_logger(__name__)
-
 logger.info("Processing started")
-logger.debug("Detailed debug info")
 ```
 
 **Default Settings:**
 
-- `log_enabled`: `true`
-- All behavioral settings: `enabled`
+- `log_enabled`: true
+- All behavioral settings enabled
 
 ## Development
 
 ```bash
-# Install in development mode
 cd sdks/python
 uv sync
-
-# Run tests
 uv run pytest
-
-# Lint
 uv run ruff check .
 ```
 
 ## Examples
 
-See the examples directory for complete examples:
-
-- [Customer Support Agent](/examples/customer-support) - Full example with multiple tools
-- [LangChain SQL Agent](/examples/langchain-sql) - SQL injection protection
-- [Galileo Luna-2 Integration](/examples/galileo-luna2) - AI-powered toxicity detection
+- Customer Support Agent
+- LangChain SQL Agent
+- Galileo Luna-2 Integration
 
 ## Documentation
 
-- [Reference Guide](/reference) - Complete API and configuration reference
-- [Examples Overview](/examples/overview) - Working code examples and patterns
-- [Architecture](https://github.com/agentcontrol/agent-control/blob/sdks/python/ARCHITECTURE.md) - SDK architecture and design patterns
+- Reference Guide
+- Examples Overview
+- Architecture (SDK design patterns)

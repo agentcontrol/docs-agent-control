@@ -58,6 +58,15 @@ flowchart TD
 
 ---
 
+
+## Components
+
+- [Server](/components/server) — FastAPI control-plane API, auth, and persistence.
+- [Engine](/components/engine) — Evaluation core that runs controls and orchestrates evaluators.
+- [Models](/components/models) — Shared Pydantic models for API and SDK contracts.
+- [Evaluators](/components/evaluators) — Built-in and pluggable evaluators for detection logic.
+- [UI Dashboard](/components/ui) — Web dashboard for managing agents and controls.
+
 ## Data Flow
 
 ### Agent Initialization
@@ -109,11 +118,13 @@ sequenceDiagram
 ```bash
 agent-control/
 ├── sdks/python/     # Python SDK (agent-control-sdk)
+├── sdks/typescript/ # TypeScript SDK (generated)
 ├── server/          # FastAPI server (agent-control-server)
 ├── engine/          # Evaluation engine (agent-control-engine)
 ├── models/          # Shared models (agent-control-models)
 ├── evaluators/      # Evaluator implementations (agent-control-evaluators)
 ├── ui/              # Next.js web dashboard
+├── scripts/         # Build and utility scripts
 └── examples/        # Usage examples
 ```
 

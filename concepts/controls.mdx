@@ -15,7 +15,7 @@ The **Scope** defines which steps trigger the control—acting as a filter to se
 
 Fields:
 
-- `step_types`: List of step types (`['tool', 'llm_inference']`). If null, applies to all types.
+- `step_types`: List of step types (`['tool', 'llm']`). If null, applies to all types.
 
 - `step_names`: List of exact step names to target (e.g., `['search_db', 'send_email']`)
 
@@ -65,7 +65,7 @@ Fields:
 ```json
 {
   "scope": {
-    "step_types": ["tool", "llm_inference"],
+    "step_types": ["tool", "llm"],
     "step_names": ["search_db", "query_api"],
     "step_name_regex": "^db_.*",
     "stages": ["pre", "post"]
@@ -180,6 +180,10 @@ Components:
 
 ### Example 3: AI-powered toxicity detection with Luna-2
 
+To use this evaluator, you will need to 
+```
+pip install agent-control-evaluators[galileo]
+```
 ```json
 {
   "evaluator": {
@@ -390,6 +394,11 @@ curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
 
 ### Example: Block Toxic Input (Luna-2 AI)
 
+To use this evaluator, you will need to and restart server. 
+```
+pip install agent-control-evaluators[galileo]
+```
+
 Via Python SDK:
 
 ```python
@@ -400,7 +409,7 @@ await controls.create_control(
         "description": "Block toxic or harmful user messages",
         "enabled": True,
         "execution": "server",
-        "scope": {"step_names": ["process_user_message"], "stages": ["pre"]},
+        "scope": {"step_names": ["process_user_message"], "step_types": ["llm"], "stages": ["pre"]},
         "selector": {"path": "input"},
         "evaluator": {
             "name": "galileo.luna2",
@@ -432,7 +441,7 @@ curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
       "description": "Block toxic or harmful user messages",
       "enabled": true,
       "execution": "server",
-      "scope": {"step_names": ["process_user_message"], "stages": ["pre"]},
+      "scope": {"step_names": ["process_user_message"], "step_types": ["llm"], "stages": ["pre"]},
       "selector": {"path": "input"},
       "evaluator": {
         "name": "galileo.luna2",
@@ -447,4 +456,5 @@ curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
   }'
 ```
 
-> **Note**: For the Luna-2 evaluator, set the `GALILEO_API_KEY` environment variable. See the [Reference](/reference#evaluators) for all available evaluators.
+> **Note**: For the Luna-2 evaluator, set the `GALILEO_API_KEY` environment variable. See the [Evaluators](/concepts/evaluators/overview) for all available evaluators.
+

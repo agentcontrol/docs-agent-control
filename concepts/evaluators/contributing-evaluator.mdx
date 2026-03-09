@@ -1,0 +1,200 @@
+---
+title: Contributing Evaluators
+description: Add a new evaluator to the core agent-control package.
+---
+
+This guide shows how to contribute a **evaluator** directly to the `agent-control` repo. If you want to publish a standalone evaluator as a separate wheel, see [Custom Evaluators](/concepts/evaluators/custom-evaluators).
+
+For a working reference, see the [Galileo Luna-2](https://github.com/agentcontrol/agent-control/tree/main/evaluators/contrib/galileo).
+
+## Quick Start
+
+Pick an evaluator name. Everything else derives from this:
+
+> **Example**: evaluator = `toxicity`
+>
+> - Package module: `agent_control_evaluators.toxicity`
+> - Entry point: `toxicity`
+> - Evaluator class: `ToxicityEvaluator`
+
+From the repo root:
+
+```bash
+mkdir -p evaluators/builtin/src/agent_control_evaluators/toxicity
+mkdir -p evaluators/builtin/tests
+
+touch evaluators/builtin/src/agent_control_evaluators/toxicity/__init__.py
+touch evaluators/builtin/src/agent_control_evaluators/toxicity/config.py
+touch evaluators/builtin/src/agent_control_evaluators/toxicity/evaluator.py
+touch evaluators/builtin/tests/test_toxicity.py
+```
+
+You’ll end up with:
+
+```text
+builtin/
+├── pyproject.toml
+├── src/agent_control_evaluators/
+│   ├── __init__.py
+│   └── toxicity/
+│       ├── __init__.py
+│       ├── config.py
+│       └── evaluator.py
+└── tests/
+    └── test_toxicity.py
+```
+
+## Writing the Evaluator
+
+**Config** — extend `EvaluatorConfig` with your evaluator’s settings:
+
+```python
+# toxicity/config.py
+from pydantic import Field
+from agent_control_evaluators import EvaluatorConfig
+
+class ToxicityConfig(EvaluatorConfig):
+    threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+    categories: list[str] = Field(default_factory=lambda: ["hate", "violence"])
+```
+
+**Evaluator** — extend `Evaluator` and decorate with `@register_evaluator`:
+
+```python
+# toxicity/evaluator.py
+from typing import Any
+
+from agent_control_evaluators import Evaluator, EvaluatorMetadata, register_evaluator
+from agent_control_models import EvaluatorResult
+
+from agent_control_evaluators.toxicity.config import ToxicityConfig
+
+@register_evaluator
+class ToxicityEvaluator(Evaluator[ToxicityConfig]):
+    metadata = EvaluatorMetadata(
+        name="toxicity",            # Must match entry point key exactly
+        version="1.0.0",
+        description="Toxicity detection",
+        requires_api_key=False,
+        timeout_ms=5000,
+    )
+    config_model = ToxicityConfig
+
+    async def evaluate(self, data: Any) -> EvaluatorResult:
+        if data is None:
+            return EvaluatorResult(matched=False, confidence=1.0, message="No data")
+
+        try:
+            score = await self._score(str(data))
+            return EvaluatorResult(
+                matched=score >= self.config.threshold,
+                confidence=score,
+                message=f"Toxicity: {score:.2f}",
+            )
+        except Exception as e:
+            # Fail-open on infrastructure errors
+            return EvaluatorResult(
+                matched=False,
+                confidence=0.0,
+                message=f"Failed: {e}",
+                error=str(e),
+            )
+
+    async def _score(self, text: str) -> float:
+        # Your API call or local logic here
+        ...
+```
+
+## Register the Entry Point
+
+Add the entry point to `evaluators/builtin/pyproject.toml`:
+
+```toml
+[project.entry-points."agent_control.evaluators"]
+"toxicity" = "agent_control_evaluators.toxicity:ToxicityEvaluator"
+```
+
+The entry point key (`toxicity`) must exactly match `metadata.name` in the evaluator class.
+
+**Exports** in `toxicity/__init__.py`:
+
+```python
+from agent_control_evaluators.toxicity.config import ToxicityConfig
+from agent_control_evaluators.toxicity.evaluator import ToxicityEvaluator
+
+__all__ = ["ToxicityEvaluator", "ToxicityConfig"]
+```
+
+## Testing
+
+Write tests using Given/When/Then style. Cover at least three cases:
+
+1. **Null input** — returns `matched=False`, no error
+2. **Normal evaluation** — returns correct `matched` based on threshold
+3. **Infrastructure failure** — returns `matched=False` with `error` set (fail-open)
+
+```python
+# tests/test_toxicity.py
+import pytest
+from agent_control_evaluators.toxicity import ToxicityEvaluator, ToxicityConfig
+
+@pytest.fixture
+def evaluator() -> ToxicityEvaluator:
+    return ToxicityEvaluator(ToxicityConfig(threshold=0.5))
+
+@pytest.mark.asyncio
+async def test_none_input(evaluator):
+    result = await evaluator.evaluate(None)
+    assert result.matched is False
+    assert result.error is None
+
+@pytest.mark.asyncio
+async def test_score_above_threshold_matches(evaluator, monkeypatch):
+    async def _high(self, text):
+        return 0.8
+
+    monkeypatch.setattr(ToxicityEvaluator, "_score", _high)
+    result = await evaluator.evaluate("test")
+    assert result.matched is True
+    assert result.error is None
+
+@pytest.mark.asyncio
+async def test_api_failure_fails_open(evaluator, monkeypatch):
+    async def _fail(self, text):
+        raise ConnectionError("timeout")
+
+    monkeypatch.setattr(ToxicityEvaluator, "_score", _fail)
+    result = await evaluator.evaluate("test")
+    assert result.matched is False
+    assert result.error is not None
+```
+
+## Rules to Know
+
+**Error handling** — The `error` field is only for infrastructure failures (network errors, API 500s, missing credentials). If your evaluator ran and produced a judgment, that’s `matched=True` or `matched=False` — not an error. When `error` is set, `matched` must be `False` (fail-open).
+
+**Thread safety** — Evaluator instances are cached and reused across concurrent requests. Never store request-scoped state on `self`. Use local variables in `evaluate()`.
+
+**Performance** — Pre-compile patterns in `__init__()`. Use `asyncio.to_thread()` for CPU-bound work. Respect `timeout_ms` for external calls.
+
+## Before You Submit
+
+From the repo root:
+
+```bash
+PKG=evaluators/builtin
+
+# Lint, typecheck, test
+(cd "$PKG" && uv run --extra dev ruff check --config ../../pyproject.toml src/)
+(cd "$PKG" && uv run --extra dev mypy --config-file ../../pyproject.toml src/)
+(cd "$PKG" && uv run pytest)
+
+# Verify discovery works
+(cd "$PKG" && uv run python -c "
+from agent_control_evaluators import discover_evaluators, get_evaluator
+discover_evaluators()
+ev = get_evaluator('toxicity')
+assert ev is not None, 'Discovery failed - entry point key does not match metadata.name'
+print(f'OK: {ev.metadata.name}')
+")
+```

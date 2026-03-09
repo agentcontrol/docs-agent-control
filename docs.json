@@ -24,16 +24,16 @@
           {
             "group": "Getting Started",
             "pages": [
-              "introduction",
-              "quickstart",
-              "ui-quickstart"
+              "core/overview",
+              "core/quickstart",
+              "core/ui-quickstart"
             ]
           },
           {
             "group": "Concepts",
             "pages": [
-              "concepts",
-              "concepts/architecture",
+              "core/concepts",
+              "core/architecture",
               "concepts/controls",
               {
                 "group": "Evaluators",
@@ -47,9 +47,20 @@
                       "concepts/evaluators/sql"
                     ]
                   },
-                  "concepts/evaluators/custom-evaluators"
+                  "concepts/evaluators/custom-evaluators",
+                  "concepts/evaluators/contributing-evaluator"
                 ]
               }
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "components/server",
+              "components/engine",
+              "components/models",
+              "components/evaluators",
+              "components/ui"
             ]
           },
           {
@@ -69,7 +80,7 @@
                 ]
               },
               {
-                "group": "Integration examples",
+                "group": "Framework Integration examples",
                 "pages": [
                   "examples/langchain-sql",
                   "examples/aws-strands",
@@ -78,7 +89,7 @@
                 ]
               },
               {
-                "group": "External evaluators",
+                "group": "Contributed Evaluators",
                 "pages": [
                   "examples/deepeval",
                   "examples/galileo-luna2"
@@ -94,10 +105,13 @@
             ]
           },
           {
-            "group": "More",
+            "group": "Reference",
             "pages": [
-              "testing",
-              "configuration"
+              "core/reference",
+              "core/configuration",
+              "sdk/python-sdk",
+              "sdk/typescript-sdk",
+              "testing"
             ]
           }
         ]
@@ -142,15 +156,23 @@
         "tab": "Reference",
         "groups": [
           {
+            "group": "Components",
+            "pages": [
+              "components/server",
+              "components/engine",
+              "components/models",
+              "components/evaluators",
+              "components/ui"
+            ]
+          },
+          {
             "group": "Reference",
             "pages": [
-              "reference",
+              "core/reference",
+              "core/configuration",
               "sdk/python-sdk",
               "sdk/typescript-sdk",
-              "server",
-              "engine",
-              "models",
-              "evaluators"
+              "testing"
             ]
           }
         ]

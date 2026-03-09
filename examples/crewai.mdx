@@ -1,321 +1,124 @@
 ---
 title: CrewAI Integration
-description: Multi-layer security for CrewAI agents — PII detection, unauthorized access blocking, and orchestration bypass protection.
+description: Combine Agent Control security with CrewAI Guardrails for production customer support.
 ---
 
-## Overview
+Combines Agent Control (security and compliance) with CrewAI Guardrails (quality retries) for production customer support.
 
-This example demonstrates integrating **Agent Control** with **CrewAI** to provide multi-layer security for a customer support agent:
+## What It Does
 
-1. **Agent Control** for security/compliance — PII detection, unauthorized access blocking
-2. **CrewAI Guardrails** for quality validation — length, tone, structure
-
-Both systems work together: Agent Control provides non-negotiable security blocks, while CrewAI Guardrails improve quality through iterative retries.
-
-<Info>
-  To run the full example yourself, visit the source on GitHub:
-  [CrewAI Example](https://github.com/agentcontrol/agent-control/tree/main/examples/crewai)
-</Info>
-
-## Why This Matters
-
-Customer support agents (human or AI) can accidentally:
-
-- Leak PII (emails, phones, SSNs, credit cards) in responses or logs
-- Access other users' data when they shouldn't
-- Disclose passwords, credentials, or admin information
-- Violate GDPR, CCPA, PCI-DSS compliance requirements
-
-Agent Control solves this with three-layer protection:
-
-| Layer | Stage | What It Does |
-| ----- | ----- | ------------ |
-| **Layer 1** | PRE-execution | Block unauthorized data access requests before processing |
-| **Layer 2** | POST-execution | Block PII that the LLM accidentally generates in tool responses |
-| **Layer 3** | Final output | Catch PII in the final crew output (orchestration bypass protection) |
+- Agent Control (security): PRE, POST, and FINAL blocks unauthorized access and PII.
+- CrewAI Guardrails (quality): validates length, structure, and tone with up to three retries.
 
 ## Prerequisites
 
-### 1. Start the Agent Control Server
+Before running this example, ensure you have:
+
+- Python 3.12+
+- uv (fast Python package manager)
+- Docker (for PostgreSQL required by Agent Control server)
+
+## Installation
+
+### 1. Install Monorepo Dependencies
+
+From the monorepo root, install all workspace packages:
 
 ```bash
+cd /path/to/agent-control
+make sync
+```
+
+This installs the Agent Control SDK and all workspace packages in editable mode.
+
+### 2. Install CrewAI Example Dependencies
+
+Navigate to the CrewAI example and install its specific dependencies:
+
+```bash
+cd examples/crewai
+uv pip install -e . --upgrade
+```
+
+### 3. Set OpenAI API Key
+
+Create a `.env` file or export the environment variable:
+
+```bash
+export OPENAI_API_KEY="your-key-here"
+```
+
+### 4. Start the Agent Control Server
+
+In a separate terminal, start the server from the monorepo root:
+
+```bash
+cd /path/to/agent-control
 make server-run
-```text
+```
 
 Verify the server is running:
 
 ```bash
 curl http://localhost:8000/health
-```text
+```
 
-### 2. Set OpenAI API Key
+### 5. Setup Content Controls (One-Time)
 
-```bash
-export OPENAI_API_KEY="your-key-here"
-```text
-
-### 3. Setup Controls
+From the `examples/crewai` directory, run the setup script:
 
 ```bash
-cd examples/crewai
-python setup_content_controls.py
-```text
-
-This creates three controls under a single policy assigned to the agent:
-
-| Control                          | Type  | Stage | What It Checks                                  |
-| -------------------------------- | ----- | ----- | ----------------------------------------------- |
-| `unauthorized-access-prevention` | Regex | pre   | Blocks requests for other users' data           |
-| `pii-detection-output`           | Regex | post  | Blocks SSN, credit cards, emails, phones in tool output |
-| Final output validation          | Regex | post  | Catches PII in final crew output (bypass protection) |
+uv run python setup_content_controls.py
+```
 
 ## Running the Example
 
-```bash
-cd examples/crewai
-python content_agent_protection.py
-```
-
-### Expected Behavior
-
-<AccordionGroup>
-  <Accordion title="Scenario 1: Unauthorized Access — PRE blocks immediately">
+Make sure you're in the `examples/crewai` directory and run:
 
 ```bash
-🔍 [LAYER 1: Agent Control PRE-execution]
-  Control: 'unauthorized-access-prevention'
-  Status: Sending to server for validation...
-
-🚫 [LAYER 1: Agent Control PRE] BLOCKED
-  Reason: Control 'unauthorized-access-prevention' matched
-  Unauthorized access attempt detected in input
+uv run python content_agent_protection.py
 ```
 
-The request is blocked **before the LLM is ever called**.
-  </Accordion>
+## Expected Behavior
 
-  <Accordion title="Scenario 2: PII Leakage — POST blocks output">
+| Scenario | Layer | Result |
+|---|---|---|
+| Unauthorized access | Agent Control PRE | Blocked |
+| PII in tool output | Agent Control POST | Blocked |
+| Short or low-quality response | Guardrails | Retry then pass |
+| Agent bypass attempt | Agent Control FINAL | Blocked |
 
-```bash
-✅ [LAYER 1: Agent Control PRE] PASSED
+## Output Legend
 
-🤖 [Tool Execution] Calling LLM to generate response...
+- PRE checks input before the LLM
+- POST checks tool output for PII
+- FINAL checks the crew’s final response
+- Agent Control blocks immediately (no retries), violations are logged
+- Guardrails retry with feedback (quality only)
 
-🚫 [LAYER 2: Agent Control POST] BLOCKED
-  Reason: Control 'pii-detection-output' matched
-  Tool executed but output contained PII violations
+## Agent Control and CrewAI Integration
+
+Agent Control works with CrewAI’s orchestration:
+
+1. CrewAI agent layer: plans tasks, selects tools, manages conversation flow
+2. Agent Control layer: enforces controls and business rules at tool boundaries
+
 ```
-
-The tool ran, but the output was blocked because it contained PII.
-  </Accordion>
-
-  <Accordion title="Scenario 2.5: Quality Issues — CrewAI Guardrails retry">
-
-```bash
-✅ [LAYER 1: Agent Control PRE] PASSED
-✅ [LAYER 2: Agent Control POST] PASSED
-
-[CrewAI Guardrails Check - Attempt 1]
-❌ Guardrail failed: Response too short (15 words).
-
-[CrewAI automatically retries with feedback...]
-
-[CrewAI Guardrails Check - Attempt 2]
-✅ All guardrails passed
+User Request
+    ↓
+CrewAI Agent (planning & orchestration)
+    ↓
+Decides to call tool
+    ↓
+@control() decorator (PRE-execution)  ← LAYER 1: Validates input
+    ↓
+Tool executes (LLM generation)
+    ↓
+@control() decorator (POST-execution) ← LAYER 2: Validates tool output
+    ↓
+If blocked, agent may generate own response
+    ↓
+Final Output Validation              ← LAYER 3: Validates crew output (bypass protection)
+    ↓
+Return to user (or block if control violated)
 ```
-
-CrewAI guardrails handle quality — they retry up to 3 times with feedback.
-  </Accordion>
-
-  <Accordion title="Scenario 3: Orchestration Bypass — Final output validation">
-
-```bash
-🚫 Tool POST-execution control blocks PII in tool response
-CrewAI agent generates own response with PII...
-
-🚫 [LAYER 3: Agent Control FINAL] BLOCKED
-   PII detected in crew output
-```
-
-Even when CrewAI's agent works around the tool-level block by generating its own
-response containing PII, the final output validation catches it.
-  </Accordion>
-</AccordionGroup>
-
-## Agent Control vs CrewAI Guardrails
-
-| Aspect           | Agent Control                  | CrewAI Guardrails              |
-| ---------------- | ------------------------------ | ------------------------------ |
-| **Purpose**      | Security / Compliance          | Quality / Format               |
-| **Checks**       | PII, unauthorized access       | Length, tone, structure         |
-| **On Failure**   | Block immediately ❌            | Retry with feedback ✅          |
-| **Retries**      | No (0)                         | Yes (up to 3)                  |
-| **Examples**     | Email, SSN, unauthorized       | Too short, unprofessional      |
-
-## How It Works
-
-### The `@control()` decorator with CrewAI tools
-
-CrewAI tools are synchronous, but the `@control()` decorator is async. Use an `asyncio.run()` wrapper:
-
-```python
-async def _handle_ticket(ticket: str) -> str:
-    """Handle customer support ticket (protected by @control)."""
-    llm = LLM(model="gpt-4o-mini")
-    prompt = f"You are a customer support agent. Respond to: {ticket}"
-    return llm.call([{"role": "user", "content": prompt}])
-
-# Set tool name (REQUIRED for tool step detection)
-_handle_ticket.name = "handle_ticket"
-_handle_ticket.tool_name = "handle_ticket"
-
-# Apply @control decorator
-controlled_func = control()(_handle_ticket)
-
-# CrewAI tool wrapper
-@tool("handle_ticket")
-def handle_ticket_tool(ticket: str) -> str:
-    """Handle customer support ticket with PII protection."""
-    try:
-        return asyncio.run(controlled_func(ticket=ticket))
-    except ControlViolationError as e:
-        return f"🚫 SECURITY VIOLATION: {e.message}"
-```
-
-### Three-layer validation flow
-
-```mermaid
-flowchart TD
-    A[User Request] --> B[CrewAI Agent\n(planning & orchestration)]
-    B --> C[@control() decorator (PRE)\nLayer 1: validate input]
-    C --> D[Tool executes\n(LLM call)]
-    D --> E[@control() decorator (POST)\nLayer 2: validate tool output]
-    E --> F{Blocked?}
-    F -- Yes --> G[Agent may generate\nown response]
-    F -- No --> H[Final output validation\nLayer 3: validate crew output]
-    G --> H
-    H --> I[Return to user\n(or block)]
-```
-
-**Why three layers?**
-
-- **Layers 1 & 2** protect at the tool boundary (standard `@control()` usage)
-- **Layer 3** protects against orchestration bypass — when CrewAI's agent generates its own response containing PII after a tool was blocked
-
-### Control configuration
-
-<CodeGroup>
-
-```python Unauthorized Access (PRE)
-{
-    "scope": {
-        "step_types": ["tool"],
-        "step_names": ["handle_ticket"],
-        "stages": ["pre"]
-    },
-    "selector": {"path": "input.ticket"},
-    "evaluator": {
-        "plugin": "regex",
-        "config": {
-            "pattern": r"(?i)(show\s+me|what\s+is|give\s+me|tell\s+me).*"
-                       r"(other\s+user|another\s+user|admin|password|credential)"
-        }
-    },
-    "action": {"decision": "deny"}
-}
-```
-
-```python PII Detection (POST)
-{
-    "scope": {
-        "step_types": ["tool"],
-        "step_names": ["handle_ticket"],
-        "stages": ["post"]
-    },
-    "selector": {"path": "output"},
-    "evaluator": {
-        "plugin": "regex",
-        "config": {
-            "pattern": r"(?:\b\d{3}-\d{2}-\d{4}\b"            # SSN
-                       r"|\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b"  # Credit card
-                       r"|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"  # Email
-                       r"|\b\d{3}[-.]?\d{3}[-.]?\d{4}\b)"      # Phone
-        }
-    },
-    "action": {"decision": "deny"}
-}
-```
-
-</CodeGroup>
-
-## Architecture
-
-```mermaid
-flowchart TD
-    A[CrewAI Crew] --> B[Agent with Tools]
-    B --> C[@tool("handle_ticket")\nCrewAI tool decorator]
-    C --> D[asyncio.run() wrapper]
-    D --> E[@control() decorated func\nAgent Control validation]
-    E --> F[PRE: Check input\nfor unauthorized access patterns]
-    F --> G[Execute LLM call\n(may generate PII)]
-    G --> H[POST: Check output for PII\n(SSN, email, phone, credit card)]
-    H --> I[Return result or raise\nControlViolationError]
-```
-
-## Files
-
-| File                          | Description                                    |
-| ----------------------------- | ---------------------------------------------- |
-| `content_agent_protection.py` | Main CrewAI crew with `@control()` integration |
-| `setup_content_controls.py`   | One-time setup for controls and policy         |
-| `pyproject.toml`              | Dependencies                                   |
-
-## Troubleshooting
-
-<AccordionGroup>
-  <Accordion title='"event loop already running" error'>
-CrewAI tools are sync by default, but `@control` requires async. Use an `asyncio.run()` wrapper:
-
-```python
-@tool("my_tool")
-def my_tool(arg: str) -> str:
-    return asyncio.run(controlled_async_func(arg))
-```
-
-  </Accordion>
-
-  <Accordion title="Control not triggering">
-**Most common cause:** the setup script was not run.
-
-```bash
-cd examples/crewai
-python setup_content_controls.py
-```
-
-Also verify the tool name is set on the async function:
-
-```python
-_my_func.name = "tool_name"
-_my_func.tool_name = "tool_name"
-```
-
-  </Accordion>
-
-  <Accordion title='"Arguments validation failed" error'>
-CrewAI may pass tool arguments in different formats. Make the tool handle both:
-
-```python
-@tool("handle_ticket")
-def handle_ticket_tool(ticket: str) -> str:
-  if isinstance(ticket, dict):
-    ticket_text = ticket.get('ticket') or ticket.get('description') or str(ticket)
-  else:
-    ticket_text = str(ticket)
-```
-
-  </Accordion>
-</AccordionGroup>
-
-## Source Code
-
-See the full example on GitHub: [CrewAI Example](https://github.com/agentcontrol/agent-control/tree/main/examples/crewai)

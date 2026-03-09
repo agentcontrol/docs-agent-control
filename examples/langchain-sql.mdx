@@ -5,21 +5,18 @@ description: SQL injection protection with LangChain integration.
 
 This example demonstrates integrating Agent Control with a LangChain SQL agent to block dangerous SQL operations.
 
-## Prerequisites
+## Setup
 
 ### 1. Start the Agent Control Server (for remote execution)
 
 **IMPORTANT: You must start/restart the server to load the SQL evaluator!**
 
 ```bash
-cd path/to/agent-control
-
 # Kill any old servers
 pkill -f "uvicorn agent_control_server"
 
 # Start the server
-cd server
-make run
+make server-run
 # OR: uv run --package agent-control-server uvicorn agent_control_server.main:app --port 8000
 ```
 
@@ -36,10 +33,14 @@ curl http://localhost:8000/api/v1/evaluators | python -m json.tool
 export OPENAI_API_KEY="your-key-here"
 ```
 
-### 3. Setup SQL Controls (One-Time)
+### 3. Install pre-reqs
+```
+cd examples/langchain
+uv pip install -e . --upgrade
+```
+### 4. Setup SQL Controls (One-Time)
 
 ```bash
-cd examples/langchain
 uv run setup_sql_controls.py
 ```
 
@@ -56,7 +57,6 @@ This creates:
 ## Running the Example
 
 ```bash
-cd examples/langchain
 uv run sql_agent_protection.py
 ```
 
