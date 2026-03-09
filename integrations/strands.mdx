@@ -1,0 +1,327 @@
+---
+title: Strands Integration
+description: Integrate Agent Control with AWS Strands using plugins and steering.
+---
+
+Seamless safety controls for [AWS Strands](https://github.com/strands-agents/sdk-python) agents using plugins - no code changes needed.
+
+## Overview
+
+Agent Control integrates seamlessly with AWS Strands using native plugin systems that add centralized safety guardrails without modifying your agent code or workflow architecture.
+
+### Integration Patterns
+
+This integration provides two complementary approaches for adding Agent Control safety guardrails to Strands agents:
+
+1. **`AgentControlPlugin`** - Plugin-based integration for tool-stage and model-stage deny checks
+2. **`AgentControlSteeringHandler`** - Steering-based integration that converts Agent Control steer actions into Strands `Guide()` instructions
+
+Both integrate natively with Strands' plugin systems, providing automatic safety without modifying your agent code.
+
+### Key Benefits
+
+**1. Dual-mode safety**
+Combine hard blocks (plugin) with soft guidance (steering) for comprehensive protection. Block dangerous operations while guiding the LLM to safer alternatives.
+
+**2. Zero code changes**
+Integrate using Strands' native plugin architecture. No modifications to existing agent code, tools, or workflows required.
+
+**3. Multi-stage protection**
+Apply controls at multiple lifecycle stages: before/after model calls, before/after tool calls, before/after node transitions, and at invocation.
+
+**4. Intelligent steering**
+Convert control violations into LLM guidance using Strands' experimental steering API. Agent automatically retries with improved context instead of hard failure.
+
+**5. Centralized governance**
+Define and update controls server-side with immediate effect across all Strands agents. No redeployment needed.
+
+### Common Use Cases
+
+**Plugin Pattern (Hard Blocks):**
+- **Tool protection** - Block dangerous tool operations (database writes, file deletions, API calls)
+- **PII prevention** - Stop sensitive data from entering or leaving tools
+- **Access control** - Enforce authorization checks at tool boundaries
+- **Compliance enforcement** - Apply regulatory controls (GDPR, HIPAA) to tool execution
+- **Multi-stage validation** - Check inputs, outputs, and state transitions across the agent lifecycle
+
+**Steering Pattern (Soft Guidance):**
+- **Content redaction** - Guide LLM to remove PII before tool calls
+- **Response refinement** - Steer agent to rephrase responses that trigger controls
+- **Graceful degradation** - Provide alternative approaches when controls block the primary path
+- **Compliance guidance** - Help agents navigate regulatory requirements without hard failure
+- **Progressive correction** - Allow multiple steering attempts before escalating to denial
+
+### Architecture
+
+**Plugin Pattern:**
+```text
+Strands Agent
+  ↓
+Model Call → Tool Call → Node Transition
+  ↓            ↓              ↓
+AgentControlPlugin (before/after each stage)
+  ↓
+Agent Control Server
+  ↓
+Hard Block (deny) or Allow
+```
+
+**Steering Pattern:**
+```text
+Strands Agent
+  ↓
+LLM generates output
+  ↓
+AgentControlSteeringHandler
+  ↓
+Agent Control Server
+  ↓
+Steer match → Guide(context) → LLM retry
+Deny match → ControlViolationError
+```
+
+**Combined (Defense-in-Depth):**
+```text
+Strands Agent
+  Model Call → Tool Call
+     ↓            ↓
+  Steering     Plugin (hard blocks)
+     ↓            ↓
+  Guide()    Allow/Deny
+     ↓
+  LLM Retry
+```
+
+Controls are evaluated against server-side control definitions at each interception point, with violations either raising exceptions (plugin) or triggering steering guidance (handler).
+
+## Installation
+
+```bash
+pip install agent-control-sdk[strands-agents]
+```
+
+This installs Agent Control SDK with Strands support.
+
+## Components
+
+### AgentControlPlugin
+
+Plugin-based integration that enforces Agent Control controls at multiple stages of agent execution:
+
+- Before and after model calls (LLM inputs and outputs)
+- Before and after tool calls (tool arguments and results)
+- Before and after node calls (workflow transitions)
+- Before invocation (initial request validation)
+
+**Key features:**
+
+- Automatic registration with Strands' plugin registry
+- Configurable event control list (choose which stages to check)
+- Hard blocks (deny actions) raise `ControlViolationError`
+- Steer actions raise `ControlSteerError` with steering context
+- Optional callback support for custom handling
+
+**Usage:**
+
+```python
+from agent_control.integrations.strands import AgentControlPlugin
+from strands import Agent
+import agent_control
+
+# Initialize Agent Control
+agent_control.init(agent_name="my-agent")
+
+# Create plugin with desired plugin stages
+plugin = AgentControlPlugin(
+    agent_name="my-agent",
+    event_control_list=[BeforeToolCallEvent, AfterToolCallEvent],
+    enable_logging=True,
+)
+
+# Add to agent
+agent = Agent(
+    name="my_agent",
+    model=model,
+    tools=[...],
+    plugins=[plugin],
+)
+```
+
+### AgentControlSteeringHandler
+
+Steering-based integration that uses Strands' experimental steering API to guide agents based on Agent Control steer actions.
+
+**Key features:**
+
+- Converts Agent Control steer matches into Strands `Guide()` actions with steering context (soft guidance)
+- Deny matches raise `ControlViolationError` (hard block)
+
+**Usage:**
+
+```python
+from agent_control.integrations.strands import AgentControlSteeringHandler
+from strands import Agent
+import agent_control
+
+# Initialize Agent Control
+agent_control.init(agent_name="banking-agent")
+
+# Create steering handler
+steering_handler = AgentControlSteeringHandler(
+    agent_name="banking-agent",
+    enable_logging=True,
+)
+
+# Add to agent as plugin
+agent = Agent(
+    name="banking_agent",
+    model=model,
+    tools=[...],
+    plugins=[steering_handler],
+)
+```
+
+**Example Steering flow:**
+
+1. LLM generates output
+2. Steering handler evaluates output against Agent Control controls
+3. If steer match found:
+   - Extracts steering context from control result
+   - Returns `Guide(steering_context)` to Strands
+   - Strands adds guidance to next LLM call
+   - Agent retries with improved context
+4. If deny match found:
+   - Raises `ControlViolationError`
+   - Execution stops
+
+## Architecture
+
+### How it works
+
+Both integrations use Agent Control's evaluation engine to check agent behavior against server-side controls:
+
+1. Agent Control server - centralized control engine that evaluates controls
+2. Strands agent - AWS Strands agent with plugin integration
+3. Integration layer - `AgentControlPlugin` or `AgentControlSteeringHandler`
+4. Plugin system - Strands' native extension points
+
+```text
+Strands Agent
+  Model Call -> Tool Call
+     |             |
+     v             v
+AgentControlPlugin (plugins)
+     |
+     v
+AgentControlSteeringHandler (steer)
+     |
+     v
+Agent Control Server
+```
+
+### Dual-layer governance
+
+You can use both components together for comprehensive protection:
+
+```python
+from agent_control.integrations.strands import (
+    AgentControlPlugin,
+    AgentControlSteeringHandler,
+)
+
+# Plugin layer: Hard blocks at tool execution
+plugin = AgentControlPlugin(
+    agent_name="banking-agent",
+    event_control_list=[BeforeToolCallEvent, AfterToolCallEvent],
+)
+
+# Steering layer: Guidance at LLM output
+steering = AgentControlSteeringHandler(
+    agent_name="banking-agent",
+)
+
+# Both as plugins
+agent = Agent(
+    name="banking_agent",
+    model=model,
+    tools=[send_email, lookup_account],
+    plugins=[plugin, steering],
+)
+```
+
+**Layer responsibilities:**
+
+- Plugin: enforces hard blocks on strands events
+- Steering: guides LLM to before or after events
+
+## Error Handling
+
+Both integrations raise standard Agent Control exceptions:
+
+- `ControlViolationError` - hard block (deny action)
+  - Contains: `control_id`, `control_name`, `message`, `metadata`
+  - Should be caught and handled by your application
+
+- `ControlSteerError` - steering suggestion (steer action, plugin only)
+  - Contains: `steering_context`, `control_name`
+  - Can be caught to extract steering guidance
+
+**Example:**
+
+```python
+from agent_control import ControlViolationError
+
+try:
+    result = await agent.invoke_async("Send email with SSN 123-45-6789")
+except ControlViolationError as e:
+    print(f"Blocked by: {e.control_name}")
+    print(f"Reason: {e.message}")
+```
+
+## Configuration
+
+Both components support:
+
+- `agent_name` (required) - Agent identifier for control lookup
+- `enable_logging` (optional) - Enable debug logging (default: `True`)
+
+**Plugin-specific:**
+
+- `event_control_list` - List of Strands events to monitor (default: all)
+- `on_control_match` - Custom callback for control matches
+- `use_runtime_error` - Raise `RuntimeError` instead of `ControlViolationError`
+
+**Steering-specific:**
+
+- `steers_applied` - Counter for applied steering actions
+- `last_steer_info` - Last steering match info (for debugging or UI)
+
+## Best Practices
+
+1. Use plugin for tool protection
+2. Use steering for content guidance
+3. Combine both for defense-in-depth
+4. Test controls incrementally
+5. Monitor steering stats
+
+## Requirements
+
+- Python 3.12+
+- `agent-control-sdk`
+- `strands-agents` (AWS Strands framework)
+- Running Agent Control server
+
+## Links
+
+- [AWS Strands GitHub](https://github.com/strands-agents/sdk-python)
+
+## Examples
+
+See complete working examples in the repository:
+
+- [`Strands Agents Integration Examples`](https://github.com/agentcontrol/agent-control/tree/main/examples/strands_agents)
+
+
+## Resources
+
+- [Strands Example](/examples/aws-strands)

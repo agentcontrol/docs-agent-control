@@ -14,7 +14,7 @@
   "fonts": {
     "family": "Geist"
   },
-  "favicon": "/favicon.png",
+  "favicon": "/images/AgentControl - Black Logomark.png",
   "navigation": {
     "tabs": [
       {
@@ -54,19 +54,18 @@
             ]
           },
           {
-            "group": "Components",
-            "pages": [
-              "components/server",
-              "components/engine",
-              "components/models",
-              "components/evaluators",
-              "components/ui"
-            ]
-          },
-          {
             "group": "How-to Guides",
             "pages": [
               "how-to/decorate-llm-tool-calls"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/strands",
+              "integrations/google-adk",
+              "integrations/crewai",
+              "integrations/langchain"
             ]
           },
           {
@@ -76,7 +75,8 @@
                 "group": "Overview",
                 "pages": [
                   "examples/overview",
-                  "examples/agent-control-demo"
+                  "examples/agent-control-demo",
+                  "examples/typescript_sdk"
                 ]
               },
               {
@@ -84,8 +84,7 @@
                 "pages": [
                   "examples/langchain-sql",
                   "examples/aws-strands",
-                  "examples/crewai",
-                  "examples/typescript_sdk"
+                  "examples/crewai"
                 ]
               },
               {
@@ -111,7 +110,17 @@
               "core/configuration",
               "sdk/python-sdk",
               "sdk/typescript-sdk",
-              "testing"
+              "testing",
+              {
+                "group": "Components",
+                "pages": [
+                  "components/server",
+                  "components/engine",
+                  "components/models",
+                  "components/evaluators",
+                  "components/ui"
+                ]
+              }
             ]
           }
         ]
@@ -124,7 +133,8 @@
             "group": "Overview",
             "pages": [
               "examples/overview",
-              "examples/agent-control-demo"
+              "examples/agent-control-demo",
+              "examples/typescript_sdk"
             ]
           },
           {
@@ -132,8 +142,7 @@
             "pages": [
               "examples/langchain-sql",
               "examples/aws-strands",
-              "examples/crewai",
-              "examples/typescript_sdk"
+              "examples/crewai"
             ]
           },
           {
@@ -156,6 +165,16 @@
         "tab": "Reference",
         "groups": [
           {
+            "group": "Reference",
+            "pages": [
+              "core/reference",
+              "core/configuration",
+              "sdk/python-sdk",
+              "sdk/typescript-sdk",
+              "testing"
+            ]
+          },
+          {
             "group": "Components",
             "pages": [
               "components/server",
@@ -166,13 +185,9 @@
             ]
           },
           {
-            "group": "Reference",
+            "group": "Integrations",
             "pages": [
-              "core/reference",
-              "core/configuration",
-              "sdk/python-sdk",
-              "sdk/typescript-sdk",
-              "testing"
+              "integrations/strands"
             ]
           }
         ]

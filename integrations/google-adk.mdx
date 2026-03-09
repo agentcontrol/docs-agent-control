@@ -1,0 +1,255 @@
+---
+title: Google ADK Integration
+description: Integrate Agent Control guardrails with Google ADK using callbacks or decorators.
+---
+
+Complete guide to integrating Agent Control safety guardrails with Google Agent Development Kit (ADK) applications.
+
+## Overview
+
+Agent Control integrates seamlessly with Google Agent Development Kit (ADK) using two flexible patterns that add centralized safety guardrails without modifying your agent's architecture.
+
+### Integration Patterns
+
+Agent Control provides two complementary integration patterns for Google ADK:
+
+1. **Callback pattern** — Uses ADK's native lifecycle hooks for model and tool protection
+2. **Decorator pattern** — Uses Agent Control's `@control()` decorator for tool-level validation
+
+Both enable centralized, server-side control enforcement without hardcoding safety logic into agent code.
+
+### Key Benefits
+
+**1. Dual protection layers**
+Choose callback pattern for full-stack protection (model + tools) or decorator pattern for lightweight tool validation. Mix both approaches as needed.
+
+**2. ADK-native integration**
+Leverage ADK's built-in lifecycle hooks (callbacks) or add explicit decorators to tools. Both preserve ADK's agent orchestration and execution flow.
+
+**3. Flexible execution modes**
+Server-side execution for centralized governance and audit logs, or SDK-local for low-latency offline operation (decorator pattern only).
+
+**4. Model-level safety**
+Callback pattern uniquely provides pre-LLM validation to block prompt injection, jailbreaks, and unsafe requests before they reach the model.
+
+### Common Use Cases
+
+**Callback Pattern:**
+- **Prompt injection prevention** - Block malicious inputs before LLM processing
+- **Jailbreak detection** - Prevent attempts to bypass model safety controls
+- **Full-pipeline protection** - Validate both model inputs/outputs and tool execution
+- **Zero tool modification** - Add controls without changing existing tool code
+
+**Decorator Pattern:**
+- **Tool-specific controls** - Apply targeted validation to high-risk tools
+- **Explicit visibility** - Clearly mark protected tools in code with decorators
+- **Low-latency validation** - Use SDK-local execution for faster response times
+- **Custom error handling** - Convert violations into ADK-friendly responses
+
+### Architecture
+
+**Callback Pattern:**
+```text
+ADK Agent
+  ↓
+before_model_callback → Agent Control (pre-LLM)
+  ↓
+LLM Call
+  ↓
+before_tool_callback → Agent Control (pre-tool)
+  ↓
+Tool Execution
+  ↓
+after_tool_callback → Agent Control (post-tool)
+  ↓
+Return to Agent
+```
+
+**Decorator Pattern:**
+```text
+ADK Agent
+  ↓
+LLM Call
+  ↓
+Tool Call (@control decorator)
+  ↓
+Agent Control Evaluation (pre-stage)
+  ↓
+Tool Execution
+  ↓
+Agent Control Evaluation (post-stage)
+  ↓
+Return to Agent
+```
+
+Controls are evaluated against server-side or local control definitions, with violations either returning replacement responses (callbacks) or raising `ControlViolationError` exceptions (decorators).
+
+## Callback Pattern
+
+Use ADK callbacks to intercept model and tool execution stages.
+
+### Events handled
+
+**`before_model_callback`**
+- When: before the LLM call
+- Purpose: block unsafe requests (prompt injection, jailbreaks)
+
+**`before_tool_callback`**
+- When: before tool execution
+- Purpose: validate tool arguments
+
+**`after_tool_callback`**
+- When: after tool execution
+- Purpose: filter sensitive outputs
+
+### How it works
+
+1. ADK invokes a callback at a lifecycle stage
+2. The callback builds a `Step` with the stage payload
+3. The SDK evaluates via the server (or local if configured)
+4. The callback returns a blocked response or proceeds
+
+### Async–sync bridge
+
+ADK callbacks are synchronous but the SDK is async. The integration uses a thread-based bridge to avoid nested event loop errors:
+
+- If an event loop is running, start a daemon thread with its own loop
+- Otherwise, use `asyncio.run()` directly
+
+### Example
+
+```python
+import agent_control
+from google.adk.agents import LlmAgent
+
+agent_control.init(
+    agent_name="google-adk-callbacks",
+    steps=[
+        {"type": "llm", "name": "root_agent", ...},
+        {"type": "tool", "name": "get_weather", ...},
+    ],
+)
+
+def before_model_callback(callback_context, llm_request):
+    step = Step(type="llm", input=extract_text(llm_request))
+    result = run_sync(evaluate(step, "pre"))
+    if result.is_denied:
+        return blocked_response()
+    return None
+
+root_agent = LlmAgent(
+    name="root_agent",
+    model="gemini-2.5-flash",
+    tools=[get_weather],
+    before_model_callback=before_model_callback,
+    before_tool_callback=before_tool_callback,
+    after_tool_callback=after_tool_callback,
+)
+```
+
+### Use when
+
+- You need **model-level protection**
+- You want **zero tool code changes**
+- You are building an **ADK-native** application
+
+[`See ADK Callbacks Example`](https://github.com/agentcontrol/agent-control/tree/main/examples/google_adk_callbacks)
+
+## Decorator Pattern
+
+Wrap tool functions with `@control()` and handle exceptions in ADK-friendly wrappers.
+
+### How it works
+
+1. At import time, `@control()` registers the step and wraps the function
+2. At runtime, the wrapper evaluates pre and post stages
+3. Exceptions are converted to ADK-friendly responses
+
+### Example
+
+```python
+import agent_control
+from agent_control import control, ControlViolationError
+from google.adk.agents import LlmAgent
+
+agent_control.init(agent_name="google-adk-decorator")
+
+@control(step_name="get_weather")
+async def _guarded_get_weather(city: str) -> dict:
+    return {"weather": "..."}
+
+async def get_weather(city: str) -> dict:
+    try:
+        return await _guarded_get_weather(city=city)
+    except ControlViolationError as exc:
+        return {"status": "blocked", "message": exc.message}
+
+root_agent = LlmAgent(
+    name="root_agent",
+    model="gemini-2.5-flash",
+    tools=[get_weather],
+)
+```
+
+### Use when
+
+- You only need **tool protection** (no model-stage checks)
+- You want **explicit visibility** via decorators
+- You want **SDK-local evaluation** (lower latency)
+
+[`See ADK Decorator Example`](https://github.com/agentcontrol/agent-control/tree/main/examples/google_adk_decorator)
+
+## Control Definition (Both Patterns)
+
+Controls are defined on the Agent Control server and apply to both patterns.
+
+```python
+{
+    "enabled": True,
+    "execution": "server",
+    "scope": {
+        "step_types": ["tool"],
+        "step_names": ["get_weather"],
+        "stages": ["pre"],
+    },
+    "selector": {"path": "input.city"},
+    "evaluator": {
+        "name": "list",
+        "config": {"values": ["Pyongyang"], "case_sensitive": False},
+    },
+    "action": {
+        "decision": "deny",
+        "message": "City blocked by control.",
+    },
+}
+```
+
+## Execution Modes
+
+**Server-side (default)**
+- Centralized controls, runtime updates, audit logs
+
+**SDK-local (decorator only)**
+- Lower latency, offline operation
+- Controls must be refreshed to pick up changes
+
+## Comparison
+
+| Feature | Callback pattern | Decorator pattern |
+|---|---|---|
+| Model protection | Yes | No |
+| Tool protection | Yes | Yes |
+| Step registration | Manual | Automatic |
+| Error handling | Return replacement | Exceptions |
+| Execution mode | Server only | Server or SDK-local |
+| Async handling | Thread bridge | Native async |
+
+## Examples
+
+- [`ADK CallBacks`](https://github.com/agentcontrol/agent-control/tree/main/examples/google_adk_callbacks)
+- [`ADK Decorator`](https://github.com/agentcontrol/agent-control/tree/main/examples/google_adk_decorator)
+
+## Resources
+
+- [ADK CallBacks Example Docs](/examples/google-adk-callbacks)
+- [ADK Decorator Example Docs](/examples/google-adk-decorator)

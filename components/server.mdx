@@ -172,10 +172,32 @@ GET /api/v1/agents/{agent_name}/controls
 ### Control Management
 
 ```bash
-POST /api/v1/controls
-GET /api/v1/controls
+# Create control
+PUT /api/v1/controls
+Body: { "name": "my-control" }
+
+# List controls (cursor-based)
+GET /api/v1/controls?cursor=123&limit=100
+
+# Get control
 GET /api/v1/controls/{control_id}
-PUT /api/v1/controls/{control_id}
+
+# Update control metadata
+PATCH /api/v1/controls/{control_id}
+Body: { "name": "new-name", "enabled": true }
+
+# Get control data
+GET /api/v1/controls/{control_id}/data
+
+# Update control data
+PUT /api/v1/controls/{control_id}/data
+Body: { "data": {...} }
+
+# Validate control data without saving
+POST /api/v1/controls/validate
+Body: { "data": {...} }
+
+# Delete control
 DELETE /api/v1/controls/{control_id}
 ```
 
