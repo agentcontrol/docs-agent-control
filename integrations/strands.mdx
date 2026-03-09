@@ -38,6 +38,7 @@ Define and update controls server-side with immediate effect across all Strands 
 ### Common Use Cases
 
 **Plugin Pattern (Hard Blocks):**
+
 - **Tool protection** - Block dangerous tool operations (database writes, file deletions, API calls)
 - **PII prevention** - Stop sensitive data from entering or leaving tools
 - **Access control** - Enforce authorization checks at tool boundaries
@@ -45,6 +46,7 @@ Define and update controls server-side with immediate effect across all Strands 
 - **Multi-stage validation** - Check inputs, outputs, and state transitions across the agent lifecycle
 
 **Steering Pattern (Soft Guidance):**
+
 - **Content redaction** - Guide LLM to remove PII before tool calls
 - **Response refinement** - Steer agent to rephrase responses that trigger controls
 - **Graceful degradation** - Provide alternative approaches when controls block the primary path
@@ -54,6 +56,7 @@ Define and update controls server-side with immediate effect across all Strands 
 ### Architecture
 
 **Plugin Pattern:**
+
 ```text
 Strands Agent
   ↓
@@ -67,6 +70,7 @@ Hard Block (deny) or Allow
 ```
 
 **Steering Pattern:**
+
 ```text
 Strands Agent
   ↓
@@ -81,6 +85,7 @@ Deny match → ControlViolationError
 ```
 
 **Combined (Defense-in-Depth):**
+
 ```text
 Strands Agent
   Model Call → Tool Call
@@ -194,7 +199,7 @@ agent = Agent(
    - Raises `ControlViolationError`
    - Execution stops
 
-## Architecture
+## Implementation Details
 
 ### How it works
 
