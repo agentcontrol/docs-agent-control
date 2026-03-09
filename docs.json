@@ -215,7 +215,8 @@
       "type": "github",
       "label": "Go to Repo",
       "href": "https://github.com/agentcontrol/agent-control"
-    }
+    },
+    "links": []
   },
   "footer": {
     "links": [
