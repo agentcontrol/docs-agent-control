@@ -108,7 +108,7 @@ API key authentication uses the `X-API-Key` header.
 | Public | `/health`, `/metrics` | None |
 | Runtime + Read | All `GET /api/v1/*` endpoints and `POST /api/v1/agents/initAgent` | Regular or Admin |
 | Runtime refresh | `GET /api/v1/agents/{agent_name}/controls` | Regular or Admin |
-| Control-plane mutations | `POST`/`PATCH`/`PUT`/`DELETE` mutations for agents, controls, policies, evaluator configs | Admin only |
+| Control-plane mutations | `POST`/`PATCH`/`PUT`/`DELETE` mutations for agents, controls, evaluator configuration | Admin only |
 
 ### Key Rotation
 
@@ -234,7 +234,7 @@ make typecheck
 | `make test` | Run tests |
 | `make lint` | Run ruff linting |
 | `make lint-fix` | Auto-fix linting issues |
-| `make typecheck` | Run mypy type checking |
+| `make typecheck` | Run Mypy type checking |
 | `make alembic-upgrade` | Run database migrations |
 | `make alembic-downgrade` | Rollback last migration |
 | `make alembic-revision MESSAGE="..."` | Create new migration |
