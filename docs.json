@@ -14,7 +14,7 @@
   "fonts": {
     "family": "Geist"
   },
-  "favicon": "/images/AgentControl-Final-Black.svg",
+  "favicon": "/images/AgentControl - Black Logomark.png",
   "navigation": {
     "tabs": [
       {
@@ -24,15 +24,15 @@
           {
             "group": "Getting Started",
             "pages": [
-              "introduction",
-              "quickstart",
-              "ui-quickstart"
+              "core/overview",
+              "core/quickstart",
+              "core/ui-quickstart"
             ]
           },
           {
             "group": "Concepts",
             "pages": [
-              "concepts",
+              "concepts/overview",
               "concepts/architecture",
               "concepts/controls",
               {
@@ -47,7 +47,8 @@
                       "concepts/evaluators/sql"
                     ]
                   },
-                  "concepts/evaluators/custom-evaluators"
+                  "concepts/evaluators/custom-evaluators",
+                  "concepts/evaluators/contributing-evaluator"
                 ]
               }
             ]
@@ -59,26 +60,37 @@
             ]
           },
           {
+            "group": "Integrations",
+            "pages": [
+              "integrations/strands",
+              "integrations/google-adk",
+              "integrations/crewai",
+              "integrations/langchain"
+            ]
+          },
+          {
             "group": "Examples",
             "pages": [
               {
                 "group": "Overview",
                 "pages": [
                   "examples/overview",
-                  "examples/agent-control-demo"
-                ]
-              },
-              {
-                "group": "Integration examples",
-                "pages": [
-                  "examples/langchain-sql",
-                  "examples/aws-strands",
-                  "examples/crewai",
+                  "examples/agent-control-demo",
                   "examples/typescript_sdk"
                 ]
               },
               {
-                "group": "External evaluators",
+                "group": "Framework Integration Examples",
+                "pages": [
+                  "examples/langchain-sql",
+                  "examples/aws-strands",
+                  "examples/crewai",
+                  "examples/google-adk-callbacks",
+                  "examples/google-adk-decorator"
+                ]
+              },
+              {
+                "group": "Contributed Evaluators",
                 "pages": [
                   "examples/deepeval",
                   "examples/galileo-luna2"
@@ -94,10 +106,23 @@
             ]
           },
           {
-            "group": "More",
+            "group": "Reference",
             "pages": [
+              "core/reference",
+              "core/configuration",
+              "sdk/python-sdk",
+              "sdk/typescript-sdk",
               "testing",
-              "configuration"
+              {
+                "group": "Components",
+                "pages": [
+                  "components/server",
+                  "components/engine",
+                  "components/models",
+                  "components/evaluators",
+                  "components/ui"
+                ]
+              }
             ]
           }
         ]
@@ -110,7 +135,8 @@
             "group": "Overview",
             "pages": [
               "examples/overview",
-              "examples/agent-control-demo"
+              "examples/agent-control-demo",
+              "examples/typescript_sdk"
             ]
           },
           {
@@ -118,8 +144,7 @@
             "pages": [
               "examples/langchain-sql",
               "examples/aws-strands",
-              "examples/crewai",
-              "examples/typescript_sdk"
+              "examples/crewai"
             ]
           },
           {
@@ -144,13 +169,27 @@
           {
             "group": "Reference",
             "pages": [
-              "reference",
+              "core/reference",
+              "core/configuration",
               "sdk/python-sdk",
               "sdk/typescript-sdk",
-              "server",
-              "engine",
-              "models",
-              "evaluators"
+              "testing"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "components/server",
+              "components/engine",
+              "components/models",
+              "components/evaluators",
+              "components/ui"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/strands"
             ]
           }
         ]

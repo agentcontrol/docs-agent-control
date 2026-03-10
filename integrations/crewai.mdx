@@ -1,0 +1,129 @@
+---
+title: CrewAI Integration
+description: Integrate Agent Control guardrails with CrewAI agents.
+---
+
+High-level guide to integrating Agent Control with CrewAI. Use Agent Control for security and compliance at tool boundaries, and keep CrewAI guardrails for response quality.
+
+## Overview
+
+Agent Control integrates seamlessly with CrewAI using a **decorator pattern** that adds centralized safety guardrails to multi-agent crews without modifying orchestration logic or task delegation.
+
+### Integration Pattern
+
+The integration uses the `@control()` decorator to wrap tool functions, enabling pre and post-execution validation at tool boundaries. This approach provides:
+
+- **Zero orchestration changes** - CrewAI's crew structure, agent roles, and task delegation remain untouched
+- **Centralized control management** - Controls are defined server-side and apply across all crew members
+- **Dual execution modes** - Server-side for centralized governance or SDK-local for low latency
+- **Sync-async bridge** - Seamlessly integrate async controls with CrewAI's synchronous tool system
+
+### Key Benefits
+
+**1. Multi-agent protection**
+Apply consistent security controls across all agents in a crew, ensuring uniform policy enforcement regardless of agent role or task.
+
+**2. Non-invasive integration**
+Add guardrails without refactoring existing CrewAI crews. The decorator wraps your tools while preserving CrewAI's native collaboration patterns.
+
+**3. Complementary safety layers**
+Keep CrewAI's built-in guardrails for response quality and agent behavior, while Agent Control handles hard security enforcement at tool boundaries.
+
+**4. Production-grade compliance**
+Built-in evaluators for PII detection, unauthorized access prevention, and custom business logic with deny/allow/steer actions.
+
+### Common Use Cases
+
+- **PII protection** - Detect and block sensitive data (SSNs, credit cards, emails) in tool inputs and outputs across all crew agents
+- **Access control** - Prevent unauthorized operations (admin access, privilege escalation, cross-user data access)
+- **Data validation** - Enforce business rules and compliance requirements at tool boundaries
+- **Sensitive operation blocking** - Restrict dangerous tool operations based on context or agent role
+- **Multi-agent governance** - Apply centralized controls across entire crews without per-agent configuration
+
+### Architecture
+
+```text
+CrewAI Crew
+  Agent 1 → Agent 2 → Agent N
+     ↓         ↓         ↓
+  Tool Call (@control decorator)
+     ↓
+Agent Control Evaluation (pre-stage)
+     ↓
+Tool Execution
+     ↓
+Agent Control Evaluation (post-stage)
+     ↓
+Return to Agent/Crew
+```
+
+Controls are evaluated against server-side or local control definitions before and after tool execution, with violations raising `ControlViolationError` exceptions that can be handled gracefully by your crew.
+
+## Implementation Steps
+
+### 1. Initialize Agent Control
+
+```python
+import agent_control
+
+agent_control.init(
+    agent_name="crew-ai-customer-support",
+    agent_description="Customer support crew with PII protection",
+)
+```
+
+### 2. Wrap a CrewAI tool with `@control()`
+
+```python
+from agent_control import control, ControlViolationError
+from crewai.tools import tool
+import asyncio
+
+# Protect the async tool implementation
+@control()
+async def _handle_ticket_protected(ticket: str) -> str:
+    return llm.call([{"role": "user", "content": ticket}])
+
+# CrewAI tools are sync, so bridge async with asyncio.run
+@tool("handle_ticket")
+def handle_ticket_tool(ticket: str) -> str:
+    try:
+        return asyncio.run(_handle_ticket_protected(ticket=ticket))
+    except ControlViolationError as exc:
+        return f"SECURITY VIOLATION: {exc.message}"
+```
+
+### 3. Define a control for the tool
+
+```python
+control_data = {
+    "enabled": True,
+    "execution": "server",
+    "scope": {
+        "step_types": ["tool"],
+        "step_names": ["handle_ticket"],
+        "stages": ["pre"],
+    },
+    "selector": {"path": "input.ticket"},
+    "evaluator": {
+        "name": "regex",
+        "config": {"pattern": r"(?i)(admin|password|other user)"},
+    },
+    "action": {"decision": "deny"},
+}
+```
+
+## Notes
+
+- Keep CrewAI guardrails for response quality, and use Agent Control for hard security enforcement.
+- CrewAI tools are sync, so use `asyncio.run()` to call `@control()` wrapped async functions.
+
+## Example Implementation
+
+See the full implementation and setup scripts in the example:
+
+- [`CrewAI Example`](https://github.com/agentcontrol/agent-control/tree/main/examples/crewai)
+
+## Resources
+
+- [CrewAI Integration Example Docs](/examples/crewai)

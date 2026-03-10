@@ -32,8 +32,10 @@ LLMs
 [L,l]ookbehind
 Luna
 Makefile
-Mypy
+[M,m]ypy
 maxItems
+typecheck
+typechecking
 minItems
 Mintlify
 [M,m]onorepo

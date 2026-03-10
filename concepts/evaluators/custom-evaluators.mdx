@@ -6,6 +6,8 @@ description: Build, register, and ship custom evaluators for Agent Control.
 ## Creating Custom Evaluators
 
 Partners and developers can create custom evaluators to extend Agent Control with their own detection capabilities.
+These evaluators can be published as wheels and installed in your Agent Control server.
+If you want to contribute an evaluator to the Agent Control repo, see [Contributing Evaluator](/concepts/evaluators/contributing-evaluator).
 
 ## Evaluator Interface
 
@@ -164,3 +166,5 @@ class ContentModerationEvaluator(Evaluator[ContentModerationEvaluatorConfig]):
             metadata={"categories": result.categories}
         )
 ```
+
+Refer [DeepEval Example](/examples/deepeval) for creating Custom Evaluators.

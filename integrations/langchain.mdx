@@ -1,0 +1,131 @@
+---
+title: LangChain Integration
+description: Integrate Agent Control guardrails with LangChain and LangGraph agents.
+---
+
+High-level guide to integrating Agent Control with LangChain and LangGraph. Use `@control()` to protect tools such as SQL, API, or file operations.
+
+## Overview
+
+Agent Control integrates seamlessly with LangChain and LangGraph using a **decorator pattern** that adds centralized safety guardrails without modifying your agent's orchestration logic or architecture.
+
+### Integration Pattern
+
+The integration uses the `@control()` decorator to wrap tool functions, enabling pre and post-execution validation at tool boundaries. This approach provides:
+
+- **Zero orchestration changes** - LangChain's agent loop, chains, and graph structures remain untouched
+- **Centralized control management** - Controls are defined server-side and apply across all agents
+- **Dual execution modes** - Server-side for centralized governance or SDK-local for low latency
+- **Native async support** - Works seamlessly with LangChain's async tool execution
+
+### Key Benefits
+
+**1. Tool-level protection**
+Enforce safety checks on dangerous operations (SQL queries, API calls, file operations, shell commands) before and after execution.
+
+**2. Non-invasive integration**
+Add guardrails without refactoring existing LangChain code. The decorator wraps your tools while preserving LangChain's native behavior.
+
+**3. Flexible deployment**
+Choose server-side execution for centralized controls and audit logs, or SDK-local execution for offline operation and lower latency.
+
+**4. Production-grade safety**
+Built-in evaluators for SQL injection, regex patterns, PII detection, and custom business logic with deny/allow/steer actions.
+
+### Common Use Cases
+
+- **SQL query validation** - Block destructive operations (DROP, DELETE), enforce LIMIT clauses, prevent multi-statement attacks
+- **API security** - Validate request parameters, filter sensitive data in responses, enforce rate limits
+- **File system protection** - Restrict access to sensitive directories, block dangerous file operations
+- **Data privacy** - Redact PII from tool inputs and outputs (SSNs, credit cards, emails)
+- **Compliance enforcement** - Apply regulatory controls (GDPR, HIPAA) at tool boundaries
+
+### Architecture
+
+```text
+LangChain Agent/Graph
+  ↓
+Tool Call (@control decorator)
+  ↓
+Agent Control Evaluation (pre-stage)
+  ↓
+Tool Execution
+  ↓
+Agent Control Evaluation (post-stage)
+  ↓
+Return to Agent
+```
+
+Controls are evaluated against server-side or local control definitions before and after tool execution, with violations raising `ControlViolationError` exceptions that can be handled gracefully by your agent.
+
+## Implementation Steps
+
+### 1. Initialize Agent Control
+
+```python
+import agent_control
+
+agent_control.init(
+    agent_name="langchain-sql-example",
+    agent_description="SQL agent with server-side controls",
+)
+```
+
+### 2. Wrap a LangChain tool with `@control()`
+
+```python
+from agent_control import control, ControlViolationError
+from langchain_core.tools import tool
+
+@control()
+async def _execute_query_with_validation(query: str):
+    return query_tool.invoke(query)
+
+@tool("sql_db_query")
+async def safe_query_tool(query: str):
+    try:
+        return await _execute_query_with_validation(query=query)
+    except ControlViolationError as exc:
+        return f"Query blocked: {exc.message}"
+```
+
+### 3. Define a control
+
+```python
+control_data = {
+    "enabled": True,
+    "execution": "server",
+    "scope": {
+        "step_types": ["tool"],
+        "step_names": ["sql_db_query"],
+        "stages": ["pre"],
+    },
+    "selector": {"path": "input.query"},
+    "evaluator": {
+        "name": "sql",
+        "config": {
+            "blocked_operations": ["DROP", "DELETE", "TRUNCATE"],
+            "allow_multi_statements": False,
+            "require_limit": True,
+            "max_limit": 100,
+        },
+    },
+    "action": {"decision": "deny"},
+}
+```
+
+## Notes
+
+- Use server execution for centralized controls and runtime updates.
+- Use SDK-local execution when you need low latency and can tolerate refresh requirements.
+
+## Example Implementation
+
+See the full implementation and setup scripts in the example:
+
+- [`LangChain SQL Example`](https://github.com/agentcontrol/agent-control/tree/main/examples/langchain)
+
+## Resources
+
+- [`LangChain SQL Example Docs`](/examples/langchain-sql)
+

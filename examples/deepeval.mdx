@@ -206,8 +206,11 @@ cd agent-control
 ### 2. Start Database and Server
 
 ```bash
+# Export OPENAI_API_KEY
+export OPENAI_API_KEY="your-openai-api-key"
+
 # Start PostgreSQL database and run migrations
-cd server && docker-compose up -d && make alembic-upgrade && cd ..
+cd server  docker-compose up -d && make alembic-upgrade && cd ..
 
 # Start the agent-control server (from repository root)
 make server-run
@@ -218,14 +221,14 @@ The server will be running at `http://localhost:8000`.
 ### 3. Install DeepEval Example
 
 ```bash
-# Navigate to the DeepEval example directory
+# In separate shell, Navigate to the DeepEval example directory
 cd examples/deepeval
 
 # Install dependencies
 uv sync
 
 # Install the evaluator package itself in editable mode
-uv pip install -e .
+uv pip install -e . --upgrade
 ```
 
 This installs:
@@ -251,8 +254,10 @@ export DEEPEVAL_TELEMETRY_OPT_OUT="true"
 After installing the DeepEval example, restart the server so it can discover the new evaluator:
 
 ```bash
+
 # Stop the server (Ctrl+C) and restart
 cd ../../  # Back to repository root
+export OPENAI_API_KEY="your-openai-api-key"
 make server-run
 ```
 
@@ -590,3 +595,9 @@ If you see `attempted relative import with no known parent package`:
 ## License
 
 This example is part of the agent-control project.
+
+## Source Code
+
+View the complete example with all scripts and setup instructions:
+
+[`DeepEval Custom Evaluator Example`](https://github.com/agentcontrol/agent-control/tree/main/examples/deepeval)

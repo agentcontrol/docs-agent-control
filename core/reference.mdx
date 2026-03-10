@@ -82,6 +82,8 @@ Priority semantics:
 
 3. **Allow/warn/log** — observability actions that do not block execution.
 
+You can read more in [Concepts](/concepts/overview)
+
 ---
 
 ## Server API
@@ -121,6 +123,8 @@ Default: `http://localhost:8000/api/v1`
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/health` | Health check (no auth required) |
+
+See more in [Server Docs](/components/server)
 
 ---
 
@@ -188,7 +192,7 @@ Agent Control supports multiple API keys for zero-downtime rotation:
 
 ## Configuration Reference
 
-See [Configuration](/configuration) for full environment variables, server settings, and database setup.
+See [Configuration](/core/configuration) for full environment variables, server settings, and database setup.
 
 ---
 
@@ -273,3 +277,13 @@ make alembic-upgrade
 - Verify the Galileo package is installed
 
 - Check server logs for evaluator discovery messages
+
+
+## Related
+
+- [Server](/components/server)
+- [Engine](/components/engine)
+- [Models](/components/models)
+- [Evaluators](/components/evaluators)
+- [UI Dashboard](/components/ui)
+

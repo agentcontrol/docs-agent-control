@@ -8,12 +8,14 @@ The Agent Control dashboard lets you manage [controls](/concepts/controls) and m
 
 ## Prerequisites
 
-Before starting the UI, make sure the **Agent Control server** is already running. If you haven't set it up yet, follow the [Quickstart](/quickstart) first.
+Before starting the UI, make sure the **Agent Control server** is already running. If you haven't set it up yet, follow the [Quickstart](/core/quickstart) first.
 
 You also need:
 
 - **Node.js 20+** (CI uses 20; 18+ may work)
 - **pnpm 9+** — install from [pnpm.io](https://pnpm.io/) or run `corepack enable && corepack prepare pnpm@latest --activate`
+
+> **Note:** If you started the server using **Option A — SDK Only** from the [Quickstart](/core/quickstart#option-a-sdk-only-fastest), the UI is already running at [http://localhost:4000](http://localhost:4000). You can skip the setup steps below and jump directly to [viewing the dashboard](#create-controls-from-the-ui).
 
 ## Start the UI Server
 
@@ -55,7 +57,7 @@ Click the **Add Control** button from the controls page to start creating a new 
 </Step>
 
 <Step title="Select the control type">
-Choose an [evaluator](/concepts/evaluators/overview) type for your control. Options include [Regex](/concepts/evaluators/built-in-evaluators), List, [JSON](/concepts/evaluators/json), [SQL](/concepts/evaluators/sql), and [AI-powered](/concepts/evaluators/custom-evaluators) evaluators.
+Choose an [evaluator](/concepts/evaluators/overview) type for your control. Options include [Regex](/concepts/evaluators/built-in-evaluators#regex-evaluator), [List](/concepts/evaluators/built-in-evaluators#list-evaluator), [JSON](/concepts/evaluators/json), [SQL](/concepts/evaluators/sql), and [AI-powered](/concepts/evaluators/custom-evaluators) evaluators.
 
 ![Select the control type to create](/images/select-control-type-to-create.png)
 </Step>
@@ -125,7 +127,7 @@ uv run python examples/agent_control_demo/demo_agent.py
     Explore built-in and custom evaluator types.
   </Card>
 
-  <Card title="Configuration" icon="gear" href="/configuration">
+  <Card title="Configuration" icon="gear" href="/core/configuration">
     Server configuration, authentication, and deployment options.
   </Card>
 

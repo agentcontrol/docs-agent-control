@@ -35,10 +35,10 @@ flowchart TD
 | Package | Description |
 |:--------|:------------|
 | [`agent-control-sdk`](/sdk/python-sdk) | Python SDK with `@control()` decorator |
-| `agent-control-server` | FastAPI server with Control Management API |
-| `agent-control-engine` | Core evaluation logic and evaluator system |
-| `agent-control-models` | Shared Pydantic v2 models |
-| `agent-control-evaluators` | Built-in evaluators |
+| [`agent-control-server`](/components/server) | FastAPI server with Control Management API |
+| [`agent-control-engine`](/components/engine) | Core evaluation logic and evaluator system |
+| [`agent-control-models`](/components/models) | Shared Pydantic v2 models |
+| [`agent-control-evaluators`](/components/evaluators) | Built-in evaluators |
 
 ### User Application Layer
 
@@ -117,12 +117,14 @@ sequenceDiagram
 
 ```bash
 agent-control/
-├── sdks/python/     # Python SDK (agent-control-sdk)
+├── sdks/python/     # Python SDK (agent-control)
+├── sdks/typescript/ # TypeScript SDK (generated)
 ├── server/          # FastAPI server (agent-control-server)
 ├── engine/          # Evaluation engine (agent-control-engine)
 ├── models/          # Shared models (agent-control-models)
 ├── evaluators/      # Evaluator implementations (agent-control-evaluators)
 ├── ui/              # Next.js web dashboard
+├── scripts/         # Build scripts
 └── examples/        # Usage examples
 ```
 

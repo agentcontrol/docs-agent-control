@@ -1,16 +1,16 @@
 ---
 title: Customer Support Agent
-description: Full example with multiple tools, PII protection, and toxicity detection.
+description: Full example with multiple tools, PII protection, and prompt injection defense.
 ---
 
-This example demonstrates how to integrate the `agent-control` SDK into an existing application. It simulates a **Customer Support Agent** - a realistic enterprise scenario that shows the key patterns for protecting AI agents with server-defined controls.
+This example demonstrates how to integrate the `agent-control` SDK into an existing application. It simulates a Customer Support Agent, a realistic enterprise scenario that shows the key patterns for protecting AI agents with server-defined controls.
 
 ## Why This Example?
 
-- **Universally understood use case**: Customer support is familiar to everyone
-- **Natural need for guardrails**: PII protection, prompt injection defense
-- **Multiple operation types**: LLM calls + tool calls (database, knowledge base, tickets)
-- **Enterprise-relevant**: Shows patterns real companies would use
+- Universally understood use case: customer support is familiar to everyone
+- Natural need for guardrails: PII protection, prompt injection defense
+- Multiple operation types: LLM calls and tool calls (database, knowledge base, tickets)
+- Enterprise-relevant: shows patterns real companies would use
 
 ## Quick Start
 
@@ -29,22 +29,17 @@ The `demo.sh start` command:
 
 - Starts PostgreSQL database
 - Runs migrations
-- Starts the API server ([http://localhost:8000](http://localhost:8000))
-- Starts the UI ([http://localhost:4000](http://localhost:4000))
-- **Registers the agent with demo controls** (PII detection, prompt injection)
+- Starts the API server (`http://localhost:8000`)
+- Starts the UI (`http://localhost:4000`)
+- Registers the agent with demo controls (PII detection, prompt injection)
 
-When you open the UI, you'll see the agent with controls already configured.
+When you open the UI, you will see the agent with controls already configured.
 
 ### Other Commands
 
 ```bash
-# Check status of all services
 ./examples/customer_support_agent/demo.sh status
-
-# Stop all services
 ./examples/customer_support_agent/demo.sh stop
-
-# Reset everything (deletes database, asks for confirmation)
 ./examples/customer_support_agent/demo.sh reset
 ```
 
@@ -52,14 +47,14 @@ When you open the UI, you'll see the agent with controls already configured.
 
 ### First-Time Setup
 
-1. **Install the SDK and evaluators**:
+1. Install the SDK and evaluators:
 
    ```bash
    pip install -e sdks/python
    pip install -e evaluators
    ```
 
-2. **Install UI dependencies**:
+2. Install UI dependencies:
 
    ```bash
    cd ui
@@ -70,43 +65,41 @@ When you open the UI, you'll see the agent with controls already configured.
 
 If you prefer to run services manually:
 
-<Steps>
-  <Step title="Start the database (requires Docker)">
-```bash
-cd server
-docker compose up -d
-```
-  </Step>
+1. Start the database (requires Docker):
 
-  <Step title="Run database migrations">
-```bash
-cd server
-make alembic-upgrade
-```
-  </Step>
+   ```bash
+   cd server
+   docker compose up -d
+   ```
 
-  <Step title="Start the server (Terminal 1)">
-```bash
-cd server
-make run
-```
+2. Run database migrations:
 
-Server runs at [http://localhost:8000](http://localhost:8000)
-  </Step>
+   ```bash
+   cd server
+   make alembic-upgrade
+   ```
 
-  <Step title="Start the UI (Terminal 2)">
-```bash
-cd ui
-pnpm dev
-```
+3. Start the server (Terminal 1):
 
-UI runs at [http://localhost:4000](http://localhost:4000)
-  </Step>
-</Steps>
+   ```bash
+   cd server
+   make run
+   ```
+
+   Server runs at `http://localhost:8000`
+
+4. Start the UI (Terminal 2):
+
+   ```bash
+   cd ui
+   pnpm dev
+   ```
+
+   UI runs at `http://localhost:4000`
 
 ## Running the Demo
 
-After `demo.sh start`, the agent already has demo controls configured. Just run:
+After `demo.sh start`, the agent already has demo controls configured. Run:
 
 ```bash
 python examples/customer_support_agent/run_demo.py
@@ -132,15 +125,11 @@ Goodbye!
 
 ### Automated Mode
 
-Run all test scenarios automatically:
-
 ```bash
 python examples/customer_support_agent/run_demo.py --automated
 ```
 
 ### Reset Agent Controls
-
-To remove all controls from the agent (keeps the agent registered):
 
 ```bash
 python examples/customer_support_agent/run_demo.py --reset
@@ -148,21 +137,21 @@ python examples/customer_support_agent/run_demo.py --reset
 
 ### Adding Custom Controls
 
-1. Open [http://localhost:4000](http://localhost:4000)
+1. Open `http://localhost:4000`
 2. Click on "Customer Support Agent" in the list
 3. Click "Add Control" to create additional controls
 
-See [Example Controls](#example-controls-to-configure) below for configuration examples.
+See Example Controls below for configuration examples.
 
 ## Available Commands
 
 | Command | Description |
-|---------|-------------|
+|---|---|
 | `/help` | Show all commands |
 | `/test-safe` | Run safe message tests |
 | `/test-pii` | Test PII detection (if control configured) |
 | `/test-injection` | Test prompt injection detection |
-| `/lookup <query>` | Look up customer (e.g., `/lookup C001`) |
+| `/lookup <query>` | Look up customer (for example, `/lookup C001`) |
 | `/search <query>` | Search knowledge base |
 | `/ticket` | Create a test support ticket |
 | `/quit` | Exit the demo |
@@ -177,8 +166,7 @@ Initialize once at application startup:
 import agent_control
 
 agent_control.init(
-    agent_name="Customer Support Agent",
-    agent_id="646d5dea-c2e6-4453-b446-7035482b38e4",
+    agent_name="customer-support-agent",
     agent_description="AI-powered customer support assistant",
 )
 ```
@@ -186,7 +174,7 @@ agent_control.init(
 This:
 
 - Registers the agent with the server
-- Fetches the assigned policy and controls
+- Fetches controls associated with the agent
 - Enables the `@control()` decorator
 
 ### 2. Protecting Functions
@@ -218,25 +206,24 @@ from agent_control import ControlViolationError
 try:
     response = await respond_to_customer(user_message)
 except ControlViolationError as e:
-    # Control triggered - return safe fallback
     print(f"Blocked by: {e.control_name}")
     response = "I cannot help with that request."
 ```
 
 ### 4. Controls are Server-Side
 
-**Important**: Controls are defined on the server via the UI, not in code.
+Controls are defined on the server via the UI, not in code.
 
 This design provides:
 
-- **Centralized management**: Security team controls policies without code changes
-- **Instant updates**: Change controls without redeploying agents
-- **Audit trail**: Server logs all control evaluations
-- **Separation of concerns**: Developers focus on features, security team on policies
+- Centralized management: security team controls safeguards without code changes
+- Instant updates: change controls without redeploying agents
+- Audit trail: server logs all control evaluations
+- Separation of concerns: developers focus on features, security team on safeguards
 
 ## Project Structure
 
-```bash
+```text
 customer_support_agent/
 ├── README.md                 # This file
 ├── demo.sh                   # Start/stop/reset script
@@ -295,7 +282,7 @@ selector:
 evaluator:
   name: regex
   config:
-    pattern: '\d{3}-\d{2}-\d{4}'  # SSN pattern
+    pattern: '\\d{3}-\\d{2}-\\d{4}'  # SSN pattern
 action:
   decision: deny
   message: "Response contains PII (SSN pattern)"
@@ -342,25 +329,17 @@ action:
 
 ## Testing the Integration
 
-1. **Without controls**: Run the demo without configuring any controls. All messages should pass through.
-
-2. **With PII control**: Add a PII detection control, then run `/test-pii`. Messages with SSN patterns should be blocked.
-
-3. **With injection control**: Add a prompt injection control, then run `/test-injection`. Injection attempts should be blocked.
+1. Without controls: Run the demo without configuring any controls. All messages should pass through.
+2. With PII control: Add a PII detection control, then run `/test-pii`. Messages with SSN patterns should be blocked.
+3. With injection control: Add a prompt injection control, then run `/test-injection`. Injection attempts should be blocked.
 
 ## Next Steps
 
-- Explore the [main examples](/examples/overview) for more integration patterns
-- Read the [SDK documentation](/sdk/python-sdk)
-
-## Overview
-
-This example demonstrates a customer support agent protected by Agent Control with multiple controls:
-
-- **PII blocking** — Prevents SSN and credit card numbers in responses
-- **Toxicity detection** — Blocks toxic or harmful user messages via Luna-2
-- **Tool restriction** — Limits which tools the agent can invoke
+- Explore the main examples for more integration patterns
+- Read the SDK documentation
 
 ## Source Code
 
-See the full example on GitHub: [Customer Support Agent](https://github.com/agentcontrol/agent-control/tree/main/examples/customer_support_agent/)
+View the complete example with all scripts and setup instructions:
+
+[`Customer Support Agent Example`](https://github.com/agentcontrol/agent-control/tree/main/examples/customer_support_agent)

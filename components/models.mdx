@@ -1,0 +1,268 @@
+---
+title: Models
+description: Shared Pydantic models used by the server and SDKs.
+icon: brain
+---
+
+Agent Control Models are the shared API contract between the server and SDKs. This package contains the Pydantic models used for API requests, responses, and validation.
+
+## Why Shared Models
+
+1. Single source of truth for request and response schemas
+2. Type safety across server and SDKs
+3. Independent versioning of model changes
+4. Easier maintenance with automatic propagation
+5. Clear, explicit API contracts
+
+## Installation
+
+This package is typically installed as a dependency:
+
+```bash
+# Server depends on it
+cd server
+uv add agent-control-models
+
+# SDK depends on it
+cd sdk
+uv add agent-control-models
+```
+
+## Usage
+
+### Agent Models
+
+```python
+from agent_control_models import Agent, Step
+
+agent = Agent(
+    agent_name="customer-service-bot",
+    agent_description="Handles customer inquiries",
+    agent_version="1.0.0",
+)
+
+step = Step(
+    type="llm",
+    name="chat",
+    input="Hello, how can I help?",
+    output="I'm here to assist you!",
+)
+```
+
+### Control Models
+
+```python
+from agent_control_models import ControlDefinition, ControlScope, ControlAction
+
+control = ControlDefinition(
+    description="Block toxic user messages",
+    enabled=True,
+    execution="server",
+    scope=ControlScope(
+        step_types=["llm"],
+        stages=["pre"],
+    ),
+    selector={"path": "input"},
+    evaluator={"name": "regex", "config": {"pattern": "toxic"}},
+    action=ControlAction(decision="deny"),
+)
+```
+
+### Evaluation Models
+
+```python
+from agent_control_models import EvaluationRequest, EvaluationResponse, Step
+
+request = EvaluationRequest(
+    agent_name="customer-service-bot",
+    step=Step(
+        type="llm",
+        name="chat",
+        input="User message",
+    ),
+    stage="pre",
+)
+
+response = EvaluationResponse(
+    is_safe=True,
+    confidence=0.99,
+    reason=None,
+    matches=[],
+    errors=[],
+    non_matches=[],
+)
+```
+
+## Models
+
+### BaseModel
+
+Base class for all models with common utilities.
+
+- `model_dump()` converts to a Python dictionary
+- `model_dump_json()` converts to JSON
+- `model_validate()` creates an instance from a dictionary
+- Accepts both `snake_case` and `camelCase` fields
+- Validates on assignment
+- Provides JSON-compatible serialization
+
+### Agent
+
+Agent metadata and configuration.
+
+- `agent_name` (str): Unique immutable agent identifier
+- `agent_description` (Optional[str]): Agent description
+- `agent_created_at` (Optional[str]): ISO 8601 created timestamp
+- `agent_updated_at` (Optional[str]): ISO 8601 updated timestamp
+- `agent_version` (Optional[str]): Semantic version string
+- `agent_metadata` (Optional[Dict]): Free-form metadata
+
+### Step
+
+Runtime payload for an agent step invocation.
+
+- `type` (str): Step type (`tool` or `llm`)
+- `name` (str): Step name (tool name or model/chain id)
+- `input` (JSON value): Step input content
+- `output` (Optional JSON value): Step output content
+- `context` (Optional JSON object): Optional context
+
+### ControlDefinition
+
+Complete control specification.
+
+- `description` (Optional[str]): Control description
+- `enabled` (bool): Whether control is active
+- `execution` (str): Execution mode (`server` or `sdk`)
+- `scope` (ControlScope): When to apply the control
+- `selector` (ControlSelector): What data to evaluate
+- `evaluator` (EvaluatorSpec): How to evaluate
+- `action` (ControlAction): What to do on match
+- `tags` (List[str]): Tags for categorization
+
+### EvaluationRequest
+
+Request for evaluating controls.
+
+- `agent_name` (str): Agent identifier
+- `step` (Step): Step payload to evaluate
+- `stage` (str): Evaluation stage (`pre` or `post`)
+
+### EvaluationResponse
+
+Server response for evaluation analysis.
+
+- `is_safe` (bool): Whether content is safe
+- `confidence` (float): Confidence score (0.0 to 1.0)
+- `reason` (Optional[str]): Explanation for the decision
+- `matches` (Optional[List[ControlMatch]]): Controls that matched
+- `errors` (Optional[List[ControlMatch]]): Controls that failed during evaluation
+- `non_matches` (Optional[List[ControlMatch]]): Controls that did not match
+
+### HealthResponse
+
+Health check response.
+
+- `status` (str): Health status
+- `version` (str): Application version
+
+## Design Patterns
+
+### Pydantic v2
+
+All models use Pydantic v2 for validation and serialization:
+
+```python
+from agent_control_models import Agent
+
+agent = Agent(
+    agent_name="my-agent",
+)
+
+agent_dict = agent.model_dump()
+agent_json = agent.model_dump_json()
+agent_copy = Agent.model_validate(agent_dict)
+```
+
+### Type Safety
+
+Models provide strong typing throughout the stack:
+
+```python
+from agent_control_models import Step, EvaluationRequest
+
+step = Step(
+    type="llm",
+    name="chat",
+    input="Hello",
+)
+
+request = EvaluationRequest(
+    agent_name="my-agent",
+    step=step,
+    stage="pre",
+)
+```
+
+### Extensibility
+
+Models support additional metadata for extensibility:
+
+```python
+from agent_control_models import Agent
+
+agent = Agent(
+    agent_name="support-bot",
+    agent_metadata={
+        "team": "customer-success",
+        "environment": "production",
+        "custom_field": "value",
+    },
+)
+```
+
+## Development
+
+### Adding New Models
+
+1. Create a new file in `src/agent_control_models/`
+2. Define models extending `BaseModel`
+3. Export them in `__init__.py`
+4. Update both server and SDK to use the new models
+
+Example:
+
+```python
+# src/agent_control_models/auth.py
+from .base import BaseModel
+
+class AuthRequest(BaseModel):
+    api_key: str
+
+# src/agent_control_models/__init__.py
+from .auth import AuthRequest
+
+__all__ = ["AuthRequest"]
+```
+
+### Testing
+
+```bash
+cd models
+uv run pytest
+```
+
+## Best Practices
+
+1. Always extend `BaseModel` to get JSON and dict conversion
+2. Use `Field` for validation and descriptions
+3. Keep models simple and data-only
+4. Version carefully because models affect server and SDKs
+5. Document fields with `Field` descriptions
+6. Use `Optional` appropriately
+
+## Source Code
+
+View the complete models source code and implementation:
+
+[`Agent Control Models`](https://github.com/agentcontrol/agent-control/tree/main/models)

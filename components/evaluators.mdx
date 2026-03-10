@@ -1,0 +1,40 @@
+---
+title: Evaluators
+description: Built-in and contributed evaluators for Agent Control.
+icon: "check"
+---
+
+The Evaluators contains all evaluator implementations used by Agent Control. Evaluators define how controls match inputs and outputs.
+
+## Structure
+
+- `builtin/` — Built-in evaluators shipped with Agent Control (regex, list, JSON, SQL)
+- `contrib/` — Contributed evaluators and templates
+- `src/` — Shared evaluator interfaces and utilities
+
+## Built-in evaluators
+
+Built-ins are available via the `agent-control-evaluators` package and are auto-discovered through Python entry points.
+
+```bash
+pip install agent-control-evaluators
+```
+
+## Contrib evaluators
+
+Contrib includes:
+
+- `contrib/galileo/` — Luna-2 evaluator integration
+- `contrib/template/` — Starter template for new evaluators
+
+## Related docs
+
+- Evaluators overview: /concepts/evaluators/overview
+- Built-in evaluators: /concepts/evaluators/built-in-evaluators
+- Contrib evaluators: /concepts/evaluators/custom-evaluators
+
+## Source Code
+
+View the complete evaluators source code and implementation:
+
+[`Agent Control Evaluators`](https://github.com/agentcontrol/agent-control/tree/main/evaluators)

@@ -1,0 +1,292 @@
+---
+title: Server
+description: FastAPI server for Agent Control — configuration, auth, and APIs.
+icon: server
+---
+
+The Agent Control server provides centralized control management and evaluation services via REST API.
+
+## Features
+
+- Control management (CRUD)
+- Agent registration and management
+- Server-side evaluation with evaluator support
+- Observability and metrics
+- API key authentication
+- Prometheus metrics
+- PostgreSQL and SQLite support
+
+## Installation
+
+### Development (monorepo)
+
+```bash
+# From the repo root
+uv sync
+
+# Start database (PostgreSQL)
+cd server
+docker-compose up -d
+
+# Run migrations
+make alembic-upgrade
+
+# Run the server
+make run
+# Or: uv run uvicorn agent_control_server.main:app --reload
+```
+
+### Production
+
+```bash
+# Build the package
+cd server
+uv build
+
+# Install the built package
+uv pip install dist/agent_control_server-*.whl
+
+# Run the server
+agent-control-server
+```
+
+## Configuration
+
+Create a `.env` file in the `server/` directory:
+
+```env
+# Database (use DATABASE_URL for Docker, DB_URL for local dev)
+DATABASE_URL=postgresql+psycopg://user:password@localhost/agent_control
+# DB_URL=postgresql+psycopg://user:password@localhost/agent_control
+# DB_URL=sqlite+aiosqlite:///./agent_control.db
+
+# Server settings
+HOST=0.0.0.0
+PORT=8000
+DEBUG=false
+
+# Authentication
+AGENT_CONTROL_API_KEY_ENABLED=true
+AGENT_CONTROL_API_KEYS=your-api-key-here,another-key-here
+AGENT_CONTROL_ADMIN_API_KEYS=your-admin-key-here
+
+# Observability
+OBSERVABILITY_ENABLED=true
+OBSERVABILITY_FLUSH_INTERVAL_SECONDS=10
+
+# Luna-2 Evaluator (optional)
+GALILEO_API_KEY=your-galileo-api-key
+
+# Prometheus metrics
+PROMETHEUS_METRICS_PREFIX=agent_control_server
+```
+
+If you use the repo-root `docker-compose.yml`, local development defaults are:
+
+- `AGENT_CONTROL_API_KEYS=420c6b90714b45beaa992c3f05cf2baf`
+- `AGENT_CONTROL_ADMIN_API_KEYS=29af8554a1fe4311977b7ce360b20cc3`
+- `NEXT_PUBLIC_AGENT_CONTROL_API_KEY=29af8554a1fe4311977b7ce360b20cc3`
+
+Change these defaults before any shared or production deployment.
+
+## Authentication
+
+API key authentication uses the `X-API-Key` header.
+
+### Auth Configuration
+
+| Environment Variable | Description | Default |
+|---|---|---|
+| `AGENT_CONTROL_API_KEY_ENABLED` | Enable or disable authentication | `false` |
+| `AGENT_CONTROL_API_KEYS` | Comma-separated list of valid API keys | (none) |
+| `AGENT_CONTROL_ADMIN_API_KEYS` | Comma-separated list of admin API keys | (none) |
+
+### Access Levels
+
+| Level | Endpoints | Key Type |
+|---|---|---|
+| Public | `/health`, `/metrics` | None |
+| Runtime + Read | All `GET /api/v1/*` endpoints and `POST /api/v1/agents/initAgent` | Regular or Admin |
+| Runtime refresh | `GET /api/v1/agents/{agent_name}/controls` | Regular or Admin |
+| Control-plane mutations | `POST`/`PATCH`/`PUT`/`DELETE` mutations for agents, controls, evaluator configuration | Admin only |
+
+### Key Rotation
+
+1. Add the new key to `AGENT_CONTROL_API_KEYS`
+2. Update clients to use the new key
+3. Remove the old key from `AGENT_CONTROL_API_KEYS`
+4. Redeploy the server
+
+### Example Usage
+
+```bash
+curl -H "X-API-Key: your-api-key" http://localhost:8000/api/v1/agents/...
+```
+
+```python
+from agent_control import AgentControlClient
+
+async with AgentControlClient(api_key="your-api-key") as client:
+    await client.health_check()
+```
+
+```bash
+export AGENT_CONTROL_API_KEY="your-api-key"
+```
+
+```python
+from agent_control import AgentControlClient
+
+async with AgentControlClient() as client:
+    await client.health_check()
+```
+
+### Disabling Authentication
+
+For local development only:
+
+```env
+AGENT_CONTROL_API_KEY_ENABLED=false
+```
+
+## API Endpoints
+
+All protected endpoints require `X-API-Key` when authentication is enabled. Control-plane mutation endpoints require an admin API key.
+
+### System
+
+```bash
+GET /health
+GET /metrics
+GET /api/v1/evaluators
+```
+
+### Agent Management
+
+```bash
+POST /api/v1/agents/initAgent
+GET /api/v1/agents/{agent_name}
+GET /api/v1/agents/{agent_name}/controls
+```
+
+### Control Management
+
+```bash
+# Create control
+PUT /api/v1/controls
+Body: { "name": "my-control" }
+
+# List controls (cursor-based)
+GET /api/v1/controls?cursor=123&limit=100
+
+# Get control
+GET /api/v1/controls/{control_id}
+
+# Update control metadata
+PATCH /api/v1/controls/{control_id}
+Body: { "name": "new-name", "enabled": true }
+
+# Get control data
+GET /api/v1/controls/{control_id}/data
+
+# Update control data
+PUT /api/v1/controls/{control_id}/data
+Body: { "data": {...} }
+
+# Validate control data without saving
+POST /api/v1/controls/validate
+Body: { "data": {...} }
+
+# Delete control
+DELETE /api/v1/controls/{control_id}
+```
+
+### Control Associations
+
+```bash
+POST /api/v1/agents/{agent_name}/controls/{control_id}
+```
+
+### Evaluation
+
+```bash
+POST /api/v1/evaluation
+```
+
+### Observability
+
+```bash
+POST /api/v1/observability/events
+POST /api/v1/observability/events/query
+GET /api/v1/observability/stats?agent_name=...&time_range=5m
+GET /api/v1/observability/stats/controls/{control_id}?agent_name=...&time_range=5m
+```
+
+## Development
+
+### Database Migrations
+
+```bash
+make alembic-revision MESSAGE="description"
+make alembic-upgrade
+make alembic-downgrade
+```
+
+### Testing
+
+```bash
+make test
+uv run pytest tests/test_controls.py
+uv run pytest --cov=agent_control_server
+```
+
+### Code Quality
+
+```bash
+make lint
+make lint-fix
+make typecheck
+```
+
+### Make Commands
+
+| Command | Description |
+|---|---|
+| `make run` | Start development server |
+| `make test` | Run tests |
+| `make lint` | Run ruff linting |
+| `make lint-fix` | Auto-fix linting issues |
+| `make typecheck` | Run Mypy type checking |
+| `make alembic-upgrade` | Run database migrations |
+| `make alembic-downgrade` | Rollback last migration |
+| `make alembic-revision MESSAGE="..."` | Create new migration |
+
+## Production Deployment
+
+### Docker
+
+```bash
+docker build -f server/Dockerfile -t agent-control-server .
+
+docker run -p 8000:8000 \
+  -e DATABASE_URL=postgresql+psycopg://user:password@host:5432/agent_control \
+  -e AGENT_CONTROL_API_KEY_ENABLED=true \
+  -e AGENT_CONTROL_API_KEYS=your-key-here \
+  -e AGENT_CONTROL_ADMIN_API_KEYS=your-admin-key-here \
+  agent-control-server
+```
+
+### Direct Installation
+
+```bash
+cd server
+uv build
+pip install dist/agent_control_server-*.whl
+agent-control-server
+```
+
+## Source Code
+
+View the complete server source code and implementation:
+
+[`Agent Control Server`](https://github.com/agentcontrol/agent-control/tree/main/server)
