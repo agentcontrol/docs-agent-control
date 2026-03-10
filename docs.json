@@ -80,11 +80,13 @@
                 ]
               },
               {
-                "group": "Framework Integration examples",
+                "group": "Framework Integration Examples",
                 "pages": [
                   "examples/langchain-sql",
                   "examples/aws-strands",
-                  "examples/crewai"
+                  "examples/crewai",
+                  "examples/google-adk-callbacks",
+                  "examples/google-adk-decorator"
                 ]
               },
               {
