@@ -18,7 +18,7 @@ npm install
 ### Run locally
 
 ```bash
-mint dev
+npm run dev
 ```
 
 This starts the Mintlify dev server at [http://localhost:3000](http://localhost:3000).
