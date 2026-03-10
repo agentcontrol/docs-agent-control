@@ -190,11 +190,7 @@ asyncio.run(setup())
 curl -L https://raw.githubusercontent.com/agentcontrol/agent-control/refs/heads/main/docker-compose.yml | AGENT_CONTROL_API_KEY_ENABLED=true AGENT_CONTROL_API_KEYS="my-ui-key" AGENT_CONTROL_ADMIN_API_KEYS="my-admin-key" AGENT_CONTROL_SESSION_SECRET="some-long-random-string" CORS_ORIGINS="http://localhost:4000" docker compose -f - up -d && pip install agent-control-sdk
 ```
 
-Now, test your agent
-
-```bash
-uv run my_agent.py
-```
+Now, run your agent code.
 
 **🎉 Done!** Your agent now blocks SSN patterns automatically.
 
