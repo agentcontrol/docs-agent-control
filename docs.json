@@ -32,8 +32,8 @@
           {
             "group": "Concepts",
             "pages": [
-              "core/concepts",
-              "core/architecture",
+              "concepts/overview",
+              "concepts/architecture",
               "concepts/controls",
               {
                 "group": "Evaluators",
