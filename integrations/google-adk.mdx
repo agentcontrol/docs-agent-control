@@ -35,7 +35,7 @@ pip install "agent-control-sdk[google-adk]"
 
 Use `AgentControlPlugin` when you want the attach-once, framework-native ADK path.
 
-### What it gives you
+### What the plugin gives you
 
 - pre-LLM guardrails through `before_model_callback`
 - pre/post-tool guardrails through the ADK plugin lifecycle
@@ -80,7 +80,7 @@ app = App(name="my_agent", root_agent=root_agent, plugins=[plugin])
 
 Use ADK callbacks when you want direct control over each lifecycle hook and are comfortable wiring the integration manually.
 
-### What it gives you
+### What callbacks give you
 
 - model-stage protection through `before_model_callback`
 - tool-stage protection through `before_tool_callback` and `after_tool_callback`
@@ -98,7 +98,7 @@ Use ADK callbacks when you want direct control over each lifecycle hook and are 
 
 Wrap tool functions with `@control()` when you only need tool protection and want explicit guarded functions in application code.
 
-### What it gives you
+### What decorators give you
 
 - pre/post-tool validation on decorated ADK tools
 - automatic step registration from decorated functions
