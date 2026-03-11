@@ -85,6 +85,7 @@
                   "examples/langchain-sql",
                   "examples/aws-strands",
                   "examples/crewai",
+                  "examples/google-adk-plugin",
                   "examples/google-adk-callbacks",
                   "examples/google-adk-decorator"
                 ]
@@ -144,7 +145,10 @@
             "pages": [
               "examples/langchain-sql",
               "examples/aws-strands",
-              "examples/crewai"
+              "examples/crewai",
+              "examples/google-adk-plugin",
+              "examples/google-adk-callbacks",
+              "examples/google-adk-decorator"
             ]
           },
           {
@@ -189,7 +193,8 @@
           {
             "group": "Integrations",
             "pages": [
-              "integrations/strands"
+              "integrations/strands",
+              "integrations/google-adk"
             ]
           }
         ]

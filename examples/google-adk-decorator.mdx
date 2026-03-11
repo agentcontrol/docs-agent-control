@@ -1,11 +1,11 @@
 ---
 title: Google ADK Decorator
-description: Use Agent Control's @control() decorator inside a Google ADK app.
+description: Use Agent Control's @control() decorator for tool protection inside a Google ADK app.
 ---
 
 This example shows how to use Agent Control's `@control()` decorator inside a Google ADK app.
 
-Use this example if you want ADK as the host framework but prefer Agent Control's decorator model for tool protection.
+Use this example if you want ADK as the host framework but prefer Agent Control's decorator model for tool protection. If you want the default framework-native path, use [/examples/google-adk-plugin](/examples/google-adk-plugin).
 
 ## What It Demonstrates
 
@@ -106,7 +106,8 @@ What time is it in Testville?
 
 - This example focuses on tool-level protection only.
 - The guarded tool implementations are marked with tool metadata before `@control()` runs. That is needed because the current Python SDK infers `tool` vs `llm` from function metadata at decoration time.
-- If you want the ADK-native callback integration pattern, use `/examples/google_adk_callbacks`.
+- If you want the recommended packaged integration, use [/examples/google-adk-plugin](/examples/google-adk-plugin).
+- If you want the ADK-native callback integration pattern, use [/examples/google-adk-callbacks](/examples/google-adk-callbacks).
 
 ## Source Code
 

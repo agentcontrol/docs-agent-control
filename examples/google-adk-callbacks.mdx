@@ -1,11 +1,13 @@
 ---
 title: Google ADK Callbacks
-description: Integrate Agent Control with Google ADK using native callback hooks.
+description: Integrate Agent Control with Google ADK using manual callback hooks.
 ---
 
 This example shows how to integrate Agent Control with Google ADK using the ADK native callback hooks.
 
-It is the canonical ADK example in this repo:
+Use this example when you want manual lifecycle control. If you are starting fresh with Google ADK, use [/examples/google-adk-plugin](/examples/google-adk-plugin) instead.
+
+This is the lower-level ADK example in this repo:
 
 - model guardrails through `before_model_callback`
 - tool guardrails through `before_tool_callback` and `after_tool_callback`
@@ -107,7 +109,8 @@ What time is it in Testville?
 ## Notes
 
 - This example is server-only by design.
-- If you want the `@control()` pattern or sdk-local execution, use `/examples/google_adk_decorator`.
+- If you want the recommended packaged integration, use [/examples/google-adk-plugin](/examples/google-adk-plugin).
+- If you want the `@control()` pattern or sdk-local execution, use [/examples/google-adk-decorator](/examples/google-adk-decorator).
 
 ## Source Code
 
