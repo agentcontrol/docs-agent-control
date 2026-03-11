@@ -14,31 +14,9 @@ icon: "house"
   allowFullScreen
 ></iframe>
 
-**Agent Control** provides a policy-based control layer that sits between your AI agents and the outside world. It evaluates inputs and outputs against configurable rules, blocking harmful content, prompt injections, PII leakage, and other risks — all without changing your agent's code. It's fully open source--check out the **Agent Control** [repo](https://github.com/agentcontrol/agent-control).
+**Agent Control** provides a centralized control layer between your AI agents and the outside world. It evaluates inputs and outputs against configurable rules, blocking harmful content, prompt injections, PII leakage, and other risks—without changing your agent’s code.
 
-<CardGroup cols={2}>
-
-  <Card title="Quickstart" icon="bolt" href="/core/quickstart">
-    Install, run, and protect your first agent in minutes.
-  </Card>
-
-</CardGroup>
-
-## Why Do You Need It?
-
-Traditional guardrails embedded inside your agent code have critical limitations:
-
-- **Scattered Logic:** Control code is buried across your agent codebase, making it hard to audit or update
-- **Deployment Overhead:** Changing protection rules requires code changes and redeployment
-- **Limited Adaptability:** Hard-coded checks can't adapt to new attack patterns or production data variations
-
-**Agent Control gives you runtime control over what your agents can and cannot do:**
-
-- **For developers:** Centralize safety logic and adapt to emerging threats instantly without redeployment
-- **For non-technical teams:** Intuitive UI to configure and monitor agent safety without touching code
-- **For organizations:** Reusable policies across agents with comprehensive audit trails
-
-**Ready to dive in?** Start with the quickstart or explore real‑world examples and core concepts below.
+Choose your next step: follow the quickstart, explore examples, or head to the repo:
 
 <CardGroup cols={2}>
 
@@ -50,8 +28,32 @@ Traditional guardrails embedded inside your agent code have critical limitations
     Real-world use cases and end-to-end integrations.
   </Card>
 
+  <Card title="Agent Control Repo" icon="github" href="https://github.com/agentcontrol/agent-control">
+    Browse the source, contribute, or star the project.
+  </Card>
+
+</CardGroup>
+
+## Why It Matters
+
+Traditional guardrails embedded inside your agent code have critical limitations:
+
+- **Scattered Logic:** Control code is buried across your agent codebase, making it hard to audit or update
+- **Deployment Overhead:** Changing protection rules requires code changes and redeployment
+- **Limited Adaptability:** Hard-coded checks can’t adapt to new attack patterns or production data variations
+
+**Agent Control gives you runtime control over what your agents can and cannot do:**
+
+- **For developers:** Centralize safety logic and adapt to emerging threats without redeployment
+- **For non-technical teams:** Configure and monitor agent safety without touching code
+- **For organizations:** Reuse controls across agents with audit-ready traces
+
+Explore the core building blocks:
+
+<CardGroup cols={2}>
+
   <Card title="Concepts" icon="lightbulb" href="/concepts">
-    Controls, Selectors, Evaluators, and Actions.
+    Controls, selectors, evaluators, and actions.
   </Card>
 
   <Card title="Architecture" icon="sitemap" href="/concepts/architecture">
@@ -59,4 +61,3 @@ Traditional guardrails embedded inside your agent code have critical limitations
   </Card>
 
 </CardGroup>
-
