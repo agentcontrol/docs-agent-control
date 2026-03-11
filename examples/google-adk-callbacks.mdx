@@ -9,9 +9,9 @@ Use this example when you want manual lifecycle control. If you are starting fre
 
 This is the lower-level ADK example in this repo:
 
-- model guardrails through `before_model_callback`
+- the callback pattern can protect model I/O through `before_model_callback` and `after_model_callback`
 - tool guardrails through `before_tool_callback` and `after_tool_callback`
-- server-side control execution only
+- this example uses server-side control execution
 
 ## What It Demonstrates
 
@@ -109,6 +109,8 @@ What time is it in Testville?
 ## Notes
 
 - This example is server-only by design.
+- The callback pattern itself can also support sdk-local evaluation when your callback wiring goes through Agent Control's local-aware evaluation helpers instead of the server-only helper used here.
+- Google ADK also supports `after_model_callback`; this example keeps the manual flow smaller and wires `before_model_callback` plus the tool hooks.
 - If you want the recommended packaged integration, use [/examples/google-adk-plugin](/examples/google-adk-plugin).
 - If you want the `@control()` pattern or sdk-local execution, use [/examples/google-adk-decorator](/examples/google-adk-decorator).
 

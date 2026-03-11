@@ -20,7 +20,7 @@ The packaged plugin should be your default choice. It gives you framework-native
 | Pattern | Best for | Model protection | Tool protection | Setup complexity | Code changes required | Step registration | Execution modes |
 |---|---|---|---|---|---|---|---|
 | Plugin | Default ADK integration with minimal code changes | Yes | Yes | Low | Attach one plugin to your ADK app | `plugin.bind(root_agent)` can discover and register LLM and tool steps | Server or SDK-local |
-| Callbacks | Manual lifecycle control and custom callback behavior | Yes | Yes | Medium | Wire ADK lifecycle hooks and shape replacement responses yourself | Manual registration alongside your callback wiring | Server-oriented |
+| Callbacks | Manual lifecycle control and custom callback behavior | Yes | Yes | Medium | Wire ADK lifecycle hooks and shape replacement responses yourself | Manual registration alongside your callback wiring | Server or SDK-local (manual) |
 | Decorator | Explicit tool-only protection | No | Yes | Low to medium | Wrap each protected tool with `@control()` | Automatic for decorated tool functions | Server or SDK-local |
 
 ## Install
@@ -37,7 +37,7 @@ Use `AgentControlPlugin` when you want the attach-once, framework-native ADK pat
 
 ### What the plugin gives you
 
-- pre-LLM guardrails through `before_model_callback`
+- pre/post-model guardrails through the ADK model callback lifecycle
 - pre/post-tool guardrails through the ADK plugin lifecycle
 - optional `plugin.bind(root_agent)` for step discovery and registration
 - the same app code working with server-side or sdk-local control execution
@@ -82,9 +82,10 @@ Use ADK callbacks when you want direct control over each lifecycle hook and are 
 
 ### What callbacks give you
 
-- model-stage protection through `before_model_callback`
+- model-stage protection through `before_model_callback` and `after_model_callback`
 - tool-stage protection through `before_tool_callback` and `after_tool_callback`
 - explicit conversion of Agent Control decisions into ADK-friendly replacement responses
+- server-side or sdk-local execution depending on the evaluation helper you call from those hooks
 
 ### Use callbacks when
 
@@ -117,13 +118,13 @@ Wrap tool functions with `@control()` when you only need tool protection and wan
 ### Server-side
 
 - centralized controls, runtime updates, and auditability
-- available with the plugin and decorator patterns
-- the callbacks example in this repo is documented as server-oriented
+- available with the plugin, callbacks, and decorator patterns
+- the callbacks example in this repo uses server execution by design, but the callback pattern itself is not limited to server execution
 
 ### SDK-local
 
 - lower latency and offline-friendly evaluation after controls are fetched
-- available with the plugin and decorator patterns
+- available with the plugin and decorator patterns directly, and with callbacks when your callback implementation routes through Agent Control's local-aware evaluation helpers
 - useful when you want to keep ADK app code unchanged while changing where controls run
 
 ## Recommended Starting Point
