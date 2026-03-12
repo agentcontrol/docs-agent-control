@@ -75,7 +75,10 @@ Apply to all model interactions:
 ```python
 {
     "scope": {"step_types": ["llm"], "stages": ["pre"]},
-    "evaluator": {"name": "regex", "config": {"pattern": r"\d{3}-\d{2}-\d{4}"}},
+    "condition": {
+        "selector": {"path": "input"},
+        "evaluator": {"name": "regex", "config": {"pattern": r"\d{3}-\d{2}-\d{4}"}},
+    },
     "action": {"decision": "deny"}
 }
 ```
@@ -91,7 +94,10 @@ Target specific tools:
         "step_names": ["lookup_order"],
         "stages": ["pre"]
     },
-    "evaluator": {"name": "regex", "config": {"pattern": r"ORD-\d+"}},
+    "condition": {
+        "selector": {"path": "input"},
+        "evaluator": {"name": "regex", "config": {"pattern": r"ORD-\d+"}},
+    },
     "action": {"decision": "deny"}
 }
 ```

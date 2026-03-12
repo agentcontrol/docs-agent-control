@@ -7,7 +7,7 @@ description: Understand how controls work and how to define them.
 
 A Control is a protection rule that evaluates agent interactions (inputs/outputs) and takes action based on configured criteria. It defines when to check, what to check, how to evaluate it, and what to do with the results.
 
-Control formula: **Control = Scope (When) + Selector (What) + Evaluator (How) + Action (Decision)**
+Control formula: **Control = Scope (When) + Condition (What + How) + Action (Decision)**
 
 ## 1. Scope (When to Check)
 
@@ -75,9 +75,66 @@ Fields:
 
 ---
 
-## 2. Selector (What to Check)
+## 2. Condition (What and How to Check)
 
-The **Selector** specifies which portion of the step's data to extract and pass to the evaluator for analysis. It uses a path specification to navigate the step object.
+The **Condition** is a recursive boolean tree. Leaf conditions pair a `selector` with an `evaluator`, and composite conditions can combine child conditions with `and`, `or`, and `not`.
+
+### Example 1: Leaf condition that checks tool output for PII
+
+```json
+{
+  "condition": {
+    "selector": {
+      "path": "output"
+    },
+    "evaluator": {
+      "name": "regex",
+      "config": {
+        "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+      }
+    }
+  }
+}
+```
+
+### Example 2: Composite condition with `and` and `not`
+
+```json
+{
+  "condition": {
+    "and": [
+      {
+        "selector": {
+          "path": "context.risk_level"
+        },
+        "evaluator": {
+          "name": "list",
+          "config": {
+            "values": ["high", "critical"]
+          }
+        }
+      },
+      {
+        "not": {
+          "selector": {
+            "path": "context.user_role"
+          },
+          "evaluator": {
+            "name": "list",
+            "config": {
+              "values": ["admin", "security"]
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+### 2.1 Selector (What to Check Inside a Leaf)
+
+Inside a leaf condition, the **Selector** specifies which portion of the step's data to extract and pass to the evaluator for analysis. It uses a path specification to navigate the step object.
 
 Field:
 
@@ -141,9 +198,9 @@ Common Paths:
 
 ---
 
-## 3. Evaluator (How to Check)
+### 2.2 Evaluator (How to Check Inside a Leaf)
 
-The **Evaluator** receives the data extracted by the selector and evaluates it against configured rules, returning whether the data matches specified criteria.
+Inside a leaf condition, the **Evaluator** receives the data extracted by the selector and evaluates it against configured rules, returning whether the data matches specified criteria.
 
 Components:
 
@@ -217,7 +274,7 @@ Agent Control supports custom evaluators for domain-specific requirements. See [
 
 ---
 
-## 4. Action (What to Do)
+## 3. Action (What to Do)
 
 The **Action** defines what happens when the evaluator matches/detects an issue.
 
@@ -313,13 +370,15 @@ Putting it all together - a control that blocks Social Security Numbers in tool 
     "step_types": ["tool"],
     "stages": ["post"]
   },
-  "selector": {
-    "path": "output"
-  },
-  "evaluator": {
-    "name": "regex",
-    "config": {
-      "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+  "condition": {
+    "selector": {
+      "path": "output"
+    },
+    "evaluator": {
+      "name": "regex",
+      "config": {
+        "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+      }
     }
   },
   "action": {
@@ -354,10 +413,12 @@ async with AgentControlClient() as client:
             "enabled": True,
             "execution": "server",
             "scope": {"step_names": ["generate_response"], "stages": ["post"]},
-            "selector": {"path": "output"},
-            "evaluator": {
-                "name": "regex",
-                "config": {"pattern": r"\\b\\d{3}-\\d{2}-\\d{4}\\b"}
+            "condition": {
+                "selector": {"path": "output"},
+                "evaluator": {
+                    "name": "regex",
+                    "config": {"pattern": r"\\b\\d{3}-\\d{2}-\\d{4}\\b"}
+                },
             },
             "action": {"decision": "deny"}
         }
@@ -384,10 +445,12 @@ curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
       "enabled": true,
       "execution": "server",
       "scope": {"step_names": ["generate_response"], "stages": ["post"]},
-      "selector": {"path": "output"},
-      "evaluator": {
-        "name": "regex",
-        "config": {"pattern": "\\\\b\\\\d{3}-\\\\d{2}-\\\\d{4}\\\\b"}
+      "condition": {
+        "selector": {"path": "output"},
+        "evaluator": {
+          "name": "regex",
+          "config": {"pattern": "\\\\b\\\\d{3}-\\\\d{2}-\\\\d{4}\\\\b"}
+        }
       },
       "action": {"decision": "deny"}
     }
@@ -413,13 +476,15 @@ await controls.create_control(
         "enabled": True,
         "execution": "server",
         "scope": {"step_names": ["process_user_message"], "step_types": ["llm"], "stages": ["pre"]},
-        "selector": {"path": "input"},
-        "evaluator": {
-            "name": "galileo.luna2",
-            "config": {
-                "metric": "input_toxicity",
-                "operator": "gt",
-                "target_value": 0.5
+        "condition": {
+            "selector": {"path": "input"},
+            "evaluator": {
+                "name": "galileo.luna2",
+                "config": {
+                    "metric": "input_toxicity",
+                    "operator": "gt",
+                    "target_value": 0.5
+                }
             }
         },
         "action": {"decision": "deny"}
@@ -445,13 +510,15 @@ curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
       "enabled": true,
       "execution": "server",
       "scope": {"step_names": ["process_user_message"], "step_types": ["llm"], "stages": ["pre"]},
-      "selector": {"path": "input"},
-      "evaluator": {
-        "name": "galileo.luna2",
-        "config": {
-          "metric": "input_toxicity",
-          "operator": "gt",
-          "target_value": 0.5
+      "condition": {
+        "selector": {"path": "input"},
+        "evaluator": {
+          "name": "galileo.luna2",
+          "config": {
+            "metric": "input_toxicity",
+            "operator": "gt",
+            "target_value": 0.5
+          }
         }
       },
       "action": {"decision": "deny"}
@@ -460,4 +527,3 @@ curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
 ```
 
 > **Note**: For the Luna-2 evaluator, set the `GALILEO_API_KEY` environment variable. See the [Evaluators](/concepts/evaluators/overview) for all available evaluators.
-

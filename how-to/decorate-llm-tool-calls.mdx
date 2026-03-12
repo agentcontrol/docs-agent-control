@@ -76,10 +76,12 @@ async def main():
             "enabled": True,
             "execution": "server",
             "scope": {"step_types": ["llm"], "stages": ["post"]},
-            "selector": {"path": "output"},
-            "evaluator": {
-                "name": "regex",
-                "config": {"pattern": r"\b\d{3}-\d{2}-\d{4}\b"},
+            "condition": {
+                "selector": {"path": "output"},
+                "evaluator": {
+                    "name": "regex",
+                    "config": {"pattern": r"\b\d{3}-\d{2}-\d{4}\b"},
+                },
             },
             "action": {"decision": "deny"},
         })
@@ -88,15 +90,17 @@ async def main():
             "enabled": True,
             "execution": "server",
             "scope": {"step_types": ["llm"], "stages": ["pre"]},
-            "selector": {"path": "input"},
-            "evaluator": {
-                "name": "list",
-                "config": {
-                    "values": ["DROP", "DELETE", "TRUNCATE"],
-                    "logic": "any",
-                    "match_on": "match",
-                    "match_mode": "contains",
-                    "case_sensitive": False,
+            "condition": {
+                "selector": {"path": "input"},
+                "evaluator": {
+                    "name": "list",
+                    "config": {
+                        "values": ["DROP", "DELETE", "TRUNCATE"],
+                        "logic": "any",
+                        "match_on": "match",
+                        "match_mode": "contains",
+                        "case_sensitive": False,
+                    },
                 },
             },
             "action": {"decision": "deny"},
