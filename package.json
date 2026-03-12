@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "mintlify dev",
-    "build": "mintlify build",
+    "build": "mintlify validate",
     "broken-links": "mintlify broken-links"
   },
   "dependencies": {

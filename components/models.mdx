@@ -52,7 +52,14 @@ step = Step(
 ### Control Models
 
 ```python
-from agent_control_models import ControlDefinition, ControlScope, ControlAction
+from agent_control_models import (
+    ConditionNode,
+    ControlAction,
+    ControlDefinition,
+    ControlScope,
+    ControlSelector,
+    EvaluatorSpec,
+)
 
 control = ControlDefinition(
     description="Block toxic user messages",
@@ -62,8 +69,10 @@ control = ControlDefinition(
         step_types=["llm"],
         stages=["pre"],
     ),
-    selector={"path": "input"},
-    evaluator={"name": "regex", "config": {"pattern": "toxic"}},
+    condition=ConditionNode(
+        selector=ControlSelector(path="input"),
+        evaluator=EvaluatorSpec(name="regex", config={"pattern": "toxic"}),
+    ),
     action=ControlAction(decision="deny"),
 )
 ```
@@ -135,10 +144,31 @@ Complete control specification.
 - `enabled` (bool): Whether control is active
 - `execution` (str): Execution mode (`server` or `sdk`)
 - `scope` (ControlScope): When to apply the control
-- `selector` (ControlSelector): What data to evaluate
-- `evaluator` (EvaluatorSpec): How to evaluate
+- `condition` (ConditionNode): Recursive condition tree; leaf nodes contain `selector` + `evaluator`
 - `action` (ControlAction): What to do on match
 - `tags` (List[str]): Tags for categorization
+
+### ConditionNode
+
+Recursive condition tree used by `ControlDefinition.condition`.
+
+- Leaf nodes contain both `selector` and `evaluator`
+- Composite nodes contain exactly one of `and`, `or`, or `not`
+- Maximum nesting depth is 6
+
+### ControlSelector
+
+Selector used inside a leaf condition.
+
+- `path` (Optional[str]): Dot-path for the value to evaluate; defaults to `"*"`
+- Common paths: `input`, `output`, `input.query`, `context.user_id`, `name`, `*`
+
+### EvaluatorSpec
+
+Evaluator used inside a leaf condition.
+
+- `name` (str): Evaluator name, such as `regex`, `list`, `sql`, or `galileo.luna2`
+- `config` (Dict[str, Any]): Evaluator-specific configuration payload
 
 ### EvaluationRequest
 

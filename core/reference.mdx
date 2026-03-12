@@ -37,7 +37,7 @@ uv run mypy .       # Type-check
 A **Control** is a single rule that defines what to check and what to do when a condition is met.
 
 ```text
-Control = Scope + Selector + Evaluator + Action
+Control = Scope + Condition + Action
 ```
 
 **Control associations** are direct links between controls and agents.
@@ -286,4 +286,3 @@ make alembic-upgrade
 - [Models](/components/models)
 - [Evaluators](/components/evaluators)
 - [UI Dashboard](/components/ui)
-
