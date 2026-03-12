@@ -417,7 +417,7 @@ async with AgentControlClient() as client:
                 "selector": {"path": "output"},
                 "evaluator": {
                     "name": "regex",
-                    "config": {"pattern": r"\\b\\d{3}-\\d{2}-\\d{4}\\b"}
+                    "config": {"pattern": r"\b\d{3}-\d{2}-\d{4}\b"}
                 },
             },
             "action": {"decision": "deny"}
@@ -456,6 +456,8 @@ curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
     }
   }'
 ```
+
+Regex pattern note: the pattern itself is `\b\d{3}-\d{2}-\d{4}\b`. Python raw strings render that as `r"\b\d{3}-\d{2}-\d{4}\b"`, while JSON payloads must escape backslashes as `"\\b\\d{3}-\\d{2}-\\d{4}\\b"`.
 
 ### Example: Block Toxic Input (Luna-2 AI)
 

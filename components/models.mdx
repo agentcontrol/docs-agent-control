@@ -148,6 +148,28 @@ Complete control specification.
 - `action` (ControlAction): What to do on match
 - `tags` (List[str]): Tags for categorization
 
+### ConditionNode
+
+Recursive condition tree used by `ControlDefinition.condition`.
+
+- Leaf nodes contain both `selector` and `evaluator`
+- Composite nodes contain exactly one of `and`, `or`, or `not`
+- Maximum nesting depth is 6
+
+### ControlSelector
+
+Selector used inside a leaf condition.
+
+- `path` (Optional[str]): Dot-path for the value to evaluate; defaults to `"*"`
+- Common paths: `input`, `output`, `input.query`, `context.user_id`, `name`, `*`
+
+### EvaluatorSpec
+
+Evaluator used inside a leaf condition.
+
+- `name` (str): Evaluator name, such as `regex`, `list`, `sql`, or `galileo.luna2`
+- `config` (Dict[str, Any]): Evaluator-specific configuration payload
+
 ### EvaluationRequest
 
 Request for evaluating controls.
