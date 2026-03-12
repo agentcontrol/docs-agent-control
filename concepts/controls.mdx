@@ -449,7 +449,7 @@ curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
         "selector": {"path": "output"},
         "evaluator": {
           "name": "regex",
-          "config": {"pattern": "\\\\b\\\\d{3}-\\\\d{2}-\\\\d{4}\\\\b"}
+          "config": {"pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b"}
         }
       },
       "action": {"decision": "deny"}
