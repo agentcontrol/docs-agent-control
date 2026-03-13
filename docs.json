@@ -35,6 +35,7 @@
               "concepts/overview",
               "concepts/architecture",
               "concepts/controls",
+              "concepts/performance",
               {
                 "group": "Evaluators",
                 "pages": [
