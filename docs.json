@@ -57,7 +57,8 @@
           {
             "group": "How-to Guides",
             "pages": [
-              "how-to/decorate-llm-tool-calls"
+              "how-to/decorate-llm-tool-calls",
+              "how-to/enable-authentication"
             ]
           },
           {
