@@ -228,91 +228,6 @@ Key Benefits:
 
 - ✅ View analytics and control execution in the dashboard
 
-## Configuration
-
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AGENT_CONTROL_URL` | `http://localhost:8000` | Server URL for SDK |
-| `AGENT_CONTROL_API_KEY` | — | API key for authentication (if enabled) |
-| `DB_URL` | `postgresql+psycopg://agent_control:agent_control@localhost:5432/agent_control` | Database connection string (SQLite: `sqlite+aiosqlite:///./agent_control.db`) |
-| `GALILEO_API_KEY` | — | Required for Luna-2 AI evaluator |
-
-### Server Configuration
-
-The server supports additional environment variables:
-
-- `AGENT_CONTROL_API_KEY_ENABLED` - Enable API key authentication (default: `false`)
-- `AGENT_CONTROL_API_KEYS` - Valid API keys for runtime/read access when auth is enabled
-- `AGENT_CONTROL_ADMIN_API_KEYS` - Admin API keys required for control-plane mutations
-- `LOG_LEVEL` - Logging level (default: `INFO`)
-
-See  [Server Docs](/components/server) for complete server configuration.
-
----
-
-## Agent Control Components
-
-Agent Control is built as a monorepo with these components:
-
-- **[Server](/components/server)** - FastAPI server handling control evaluation, agent registration, and analytics
-- **[Engine](/components/engine)** - Evaluation engine that orchestrates control checks and applies actions
-- **[Models](/components/models)** - Shared data models and schemas used across all components
-- **[Evaluators](/components/evaluators)** - Built-in and AI-powered evaluators (regex, list, JSON, SQL, Luna-2)
-- **[UI](/components/ui)** - Next.js dashboard for managing controls, agents, and viewing analytics
-- **SDKs** - Python and TypeScript client libraries for integrating with your agents
-
----
-
-## Development
-
-### Directory Structure
-
-```text
-agent-control/
-├── sdks/python/     # Python SDK (agent-control)
-├── sdks/typescript/ # TypeScript SDK (generated)
-├── server/          # FastAPI server (agent-control-server)
-├── engine/          # Evaluation engine (agent-control-engine)
-├── models/          # Shared models (agent-control-models)
-├── evaluators/      # Evaluator implementations (agent-control-evaluators)
-├── ui/              # Next.js web dashboard
-├── scripts/         # Build scripts
-└── examples/        # Usage examples
-```
-
-### Makefile Commands
-
-The project uses a Makefile for common tasks:
-
-| Command | Description |
-|---------|-------------|
-| `make sync` | Install dependencies for all workspace packages |
-| `make test` | Run tests across all packages |
-| `make lint` | Run ruff linting |
-| `make lint-fix` | Run ruff with auto-fix |
-| `make typecheck` | Run mypy typechecking |
-| `make check` | Run all quality checks (test + lint + typecheck) |
-| `make server-run` | Start the server |
-| `make server-<target>` | Forward commands to server (e.g., `make server-alembic-upgrade`) |
-| `make sdk-<target>` | Forward commands to SDK (e.g., `make sdk-test`) |
-| `make engine-<target>` | Forward commands to engine (e.g., `make engine-test`) |
-
----
-
-## Next Steps
-
-- **Add more controls:** See [Controls](/concepts/controls#defining-controls) for examples and guidance
-
-- **Explore evaluators:** See [Evaluators](/concepts/evaluators/overview) or create custom evaluators. See [DeepEval example](/examples/deepeval) for custom evaluator examples
-
-- **Production setup:** Enable authentication — see the [Reference](/core/reference#authentication)
-
-- **Check examples:** See [Examples](/examples/overview) for real-world patterns
-
-> **💡 Pro Tip:** Start with simple regex controls, then graduate to AI-powered evaluators for complex safety checks.
-
 ## What’s Next
 
 <CardGroup cols={2}>
@@ -323,6 +238,10 @@ The project uses a Makefile for common tasks:
 
   <Card title="Examples" icon="code" href="/examples/overview">
     See working integration examples with LangChain, CrewAI, and more.
+  </Card>
+
+  <Card title="Performance" icon="gauge-high" href="/concepts/performance">
+    See benchmark results showing Agent Control adds negligible latency.
   </Card>
 
 </CardGroup>
