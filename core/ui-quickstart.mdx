@@ -6,22 +6,21 @@ icon: "browser"
 
 The Agent Control dashboard lets you manage [controls](/concepts/controls) and monitor agent activity — no code changes required.
 
-## Prerequisites
+## Open the Dashboard
 
-Before starting the UI, make sure the **Agent Control server** is already running. If you haven't set it up yet, follow the [Quickstart](/core/quickstart) first.
+If you followed the [Quickstart](/core/quickstart), the dashboard is already running. Open [http://localhost:8000](http://localhost:8000) in your browser.
 
-You also need:
+You should see an empty state — this is expected before any controls are created.
 
+![Dashboard with no controls at startup](/images/no-controls-at-startup.png)
+
+<Accordion title="Manual setup (only if you're running the server from source)">
+
+If you cloned the `agent-control` repository and started the server with `make server-run`, you need to start the UI separately:
+
+**Prerequisites:**
 - **Node.js 20+** (CI uses 20; 18+ may work)
 - **pnpm 9+** — install from [pnpm.io](https://pnpm.io/) or run `corepack enable && corepack prepare pnpm@latest --activate`
-
-> **Note:** If you started the server using **One-line setup** from the [Quickstart](/core/quickstart), the UI is already running at [http://localhost:4000](http://localhost:4000). You can skip the setup steps below and jump directly to [viewing the dashboard](#create-controls-from-the-ui).
-
-## Start the UI Server
-
-<Steps>
-<Step title="Install and start the dashboard">
-From the root of the `agent-control` repository, run the following commands in a **separate terminal**:
 
 ```bash
 cd ui
@@ -29,21 +28,13 @@ pnpm install
 pnpm dev
 ```
 
-The dashboard is now running at [http://localhost:4000](http://localhost:4000).
+The dashboard will be running at [http://localhost:4000](http://localhost:4000).
 
 <Tip>
 Keep the Agent Control server (`make server-run`) and the UI (`pnpm dev`) running in separate terminal windows. The dashboard communicates with the server at `http://localhost:8000` by default.
 </Tip>
-</Step>
 
-<Step title="Verify the dashboard is running">
-Open [http://localhost:4000](http://localhost:4000). You should see an empty state — this is expected before any controls are registered.
-
-![Dashboard with no controls at startup](/images/no-controls-at-startup.png)
-
-The dashboard reflects the server's current configuration. Controls appear here automatically once you create them.
-</Step>
-</Steps>
+</Accordion>
 
 ## Create Controls from the UI
 
@@ -80,14 +71,6 @@ Fill in the control details. See [Controls](/concepts/controls) for a full expla
 Click **Save** to register the control. It takes effect immediately — no redeployment needed.
 </Step>
 </Steps>
-
-## Regenerate API Types (Optional)
-
-If you update the server API and need fresh UI types, regenerate them from the running server:
-
-```bash
-pnpm fetch-api-types  # fetches from http://localhost:8000/openapi.json
-```
 
 ## Monitoring
 
