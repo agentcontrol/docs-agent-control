@@ -1,0 +1,109 @@
+---
+title: Enable Authentication
+description: Secure your Agent Control server with API key authentication for shared and production deployments.
+icon: "lock"
+---
+
+Authentication is disabled by default so you can get started quickly in local development. Before sharing your server or deploying to production, enable API key authentication to protect the control plane from unauthorized access.
+
+## How It Works
+
+Agent Control uses a two-tier API key model:
+
+| Key type | Environment variable | What it can do |
+|----------|---------------------|----------------|
+| **Regular** | `AGENT_CONTROL_API_KEYS` | Register agents, evaluate controls, read controls and agents |
+| **Admin** | `AGENT_CONTROL_ADMIN_API_KEYS` | Everything above **plus** create/update/delete controls and manage agent-control associations |
+
+The `/health` endpoint is always public and requires no authentication.
+
+<Tip>
+Give your agent runtime a **regular** key. Reserve **admin** keys for setup scripts, CI pipelines, and the UI dashboard.
+</Tip>
+
+## Step-by-Step Setup
+
+<Steps>
+<Step title="Start the server with authentication enabled">
+
+Pass the authentication environment variables when starting the server:
+
+```bash
+curl -L https://raw.githubusercontent.com/agentcontrol/agent-control/refs/heads/main/docker-compose.yml \
+  | AGENT_CONTROL_API_KEY_ENABLED=true \
+    AGENT_CONTROL_API_KEYS="my-runtime-key" \
+    AGENT_CONTROL_ADMIN_API_KEYS="my-admin-key" \
+    AGENT_CONTROL_SESSION_SECRET="some-long-random-string" \
+    CORS_ORIGINS="http://localhost:4000" \
+    docker compose -f - up -d
+```
+
+<Warning>
+Replace the placeholder key values above with strong, unique secrets before any shared or production deployment.
+</Warning>
+
+</Step>
+
+<Step title="Pass the API key from the SDK">
+
+The SDK reads the `AGENT_CONTROL_API_KEY` environment variable by default, or you can pass it explicitly:
+
+```python
+from agent_control import AgentControlClient
+
+# Option 1: Environment variable (recommended)
+# export AGENT_CONTROL_API_KEY="my-runtime-key"
+async with AgentControlClient() as client:
+    await client.health_check()
+
+# Option 2: Explicit constructor argument
+async with AgentControlClient(api_key="my-runtime-key") as client:
+    await client.health_check()
+```
+
+</Step>
+
+<Step title="Use an admin key for control management">
+
+Operations that modify controls or agent-control associations require an admin key. This keeps your control plane locked down even if a runtime key is compromised.
+
+```python
+# setup.py — run with an admin key
+async with AgentControlClient(api_key="my-admin-key") as client:
+    await controls.create_control(client, name="block-ssn", data={...})
+    await agents.add_agent_control(client, agent_name="my-agent", control_id="...")
+```
+
+</Step>
+
+<Step title="Include the key in direct API calls">
+
+If calling the REST API directly, include the key in the `X-API-Key` header:
+
+```bash
+curl -H "X-API-Key: my-runtime-key" \
+  http://localhost:8000/api/v1/agents
+```
+
+</Step>
+</Steps>
+
+## Key Rotation
+
+Agent Control accepts multiple comma-separated keys per variable, making zero-downtime rotation straightforward:
+
+1. Add the new key alongside the old one: `AGENT_CONTROL_API_KEYS="old-key,new-key"`
+2. Redeploy the server
+3. Update all clients to use the new key
+4. Remove the old key: `AGENT_CONTROL_API_KEYS="new-key"`
+5. Redeploy again
+
+## Troubleshooting
+
+**401 Unauthorized** — check these in order:
+
+1. Authentication is enabled (`AGENT_CONTROL_API_KEY_ENABLED=true`)
+2. Your key is present in the correct variable (`AGENT_CONTROL_API_KEYS` for regular, `AGENT_CONTROL_ADMIN_API_KEYS` for admin operations)
+3. The `X-API-Key` header (or SDK `api_key` argument) matches exactly — no trailing whitespace or quotes
+
+See the [Authentication reference](/core/reference#authentication) for the full configuration table.

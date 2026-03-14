@@ -186,22 +186,9 @@ Now, run your agent code.
 
 **🎉 Done!** Your agent now blocks SSN patterns automatically.
 
-> [**!NOTE**]
-> **Authentication Note:** Authentication is disabled by default in the server .env (`AGENT_CONTROL_API_KEY_ENABLED=false`). If you enable it, this setup script needs an admin API key because it creates a control and attaches it to an agent. `agents.register_agent()` accepts a regular or admin key, but `controls.create_control()` and `agents.add_agent_control()` require a key listed in `AGENT_CONTROL_ADMIN_API_KEYS`.
->
-> In the example .env, the placeholders are:
->
-> - **Regular API key(s):** `AGENT_CONTROL_API_KEYS` (e.g., "my-ui-key")
-> - **Admin API key(s):** `AGENT_CONTROL_ADMIN_API_KEYS` (e.g., "my-admin-key")
->
-> **Replace these defaults before any shared or production deployment.**
-
-**With authentication enabled:**
-
-```bash
-curl -L https://raw.githubusercontent.com/agentcontrol/agent-control/refs/heads/main/docker-compose.yml | AGENT_CONTROL_API_KEY_ENABLED=true AGENT_CONTROL_API_KEYS="my-ui-key" AGENT_CONTROL_ADMIN_API_KEYS="my-admin-key" AGENT_CONTROL_SESSION_SECRET="some-long-random-string" CORS_ORIGINS="http://localhost:4000" docker compose -f - up -d
-```
-
+<Note>
+Authentication is disabled by default for local development. When you're ready to deploy, see the [Enable Authentication](/how-to/enable-authentication) guide.
+</Note>
 
 ### What Is Happening Under the Hood
 
@@ -228,111 +215,13 @@ Key Benefits:
 
 - ✅ View analytics and control execution in the dashboard
 
-## Performance
-
-| Endpoint | Scenario | RPS | p50 | p99 |
-|----------|----------|-----|-----|-----|
-| Agent init | Agent with 3 tool steps | 509 | 19 ms | 54 ms |
-| Evaluation | 1 control, 500-char content | 437 | 36 ms | 61 ms |
-| Evaluation | 10 controls, 500-char content | 349 | 35 ms | 66 ms |
-| Evaluation | 50 controls, 500-char content | 199 | 63 ms | 91 ms |
-| Controls refresh | 5-50 controls per agent | 273-392 | 20-27 ms | 27-61 ms |
-
-- Agent init handles both create and update identically (create-or-update operation).
-- All four built-in evaluators (regex, list, JSON, SQL) perform within 40-46 ms p50 at 1 control.
-- Moving from 1 to 50 controls increased evaluation p50 by about 27 ms.
-- Local laptop benchmarks are directional and intended for developer reference. They are not production sizing guidance.
-
-_Performance tested on Apple M5 (16 GB RAM), Docker Compose (`postgres:16` + `agent-control`). 2 minutes per scenario, 5 concurrent users for latency (p50, p99), 10-20 for throughput (RPS). RPS = completed requests per second. All scenarios completed with 0% errors._
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AGENT_CONTROL_URL` | `http://localhost:8000` | Server URL for SDK |
-| `AGENT_CONTROL_API_KEY` | — | API key for authentication (if enabled) |
-| `DB_URL` | `postgresql+psycopg://agent_control:agent_control@localhost:5432/agent_control` | Database connection string (SQLite: `sqlite+aiosqlite:///./agent_control.db`) |
-| `GALILEO_API_KEY` | — | Required for Luna-2 AI evaluator |
-
-### Server Configuration
-
-The server supports additional environment variables:
-
-- `AGENT_CONTROL_API_KEY_ENABLED` - Enable API key authentication (default: `false`)
-- `AGENT_CONTROL_API_KEYS` - Valid API keys for runtime/read access when auth is enabled
-- `AGENT_CONTROL_ADMIN_API_KEYS` - Admin API keys required for control-plane mutations
-- `LOG_LEVEL` - Logging level (default: `INFO`)
-
-See  [Server Docs](/components/server) for complete server configuration.
-
----
-
-## Agent Control Components
-
-Agent Control is built as a monorepo with these components:
-
-- **[Server](/components/server)** - FastAPI server handling control evaluation, agent registration, and analytics
-- **[Engine](/components/engine)** - Evaluation engine that orchestrates control checks and applies actions
-- **[Models](/components/models)** - Shared data models and schemas used across all components
-- **[Evaluators](/components/evaluators)** - Built-in and AI-powered evaluators (regex, list, JSON, SQL, Luna-2)
-- **[UI](/components/ui)** - Next.js dashboard for managing controls, agents, and viewing analytics
-- **SDKs** - Python and TypeScript client libraries for integrating with your agents
-
----
-
-## Development
-
-### Directory Structure
-
-```text
-agent-control/
-├── sdks/python/     # Python SDK (agent-control)
-├── sdks/typescript/ # TypeScript SDK (generated)
-├── server/          # FastAPI server (agent-control-server)
-├── engine/          # Evaluation engine (agent-control-engine)
-├── models/          # Shared models (agent-control-models)
-├── evaluators/      # Evaluator implementations (agent-control-evaluators)
-├── ui/              # Next.js web dashboard
-├── scripts/         # Build scripts
-└── examples/        # Usage examples
-```
-
-### Makefile Commands
-
-The project uses a Makefile for common tasks:
-
-| Command | Description |
-|---------|-------------|
-| `make sync` | Install dependencies for all workspace packages |
-| `make test` | Run tests across all packages |
-| `make lint` | Run ruff linting |
-| `make lint-fix` | Run ruff with auto-fix |
-| `make typecheck` | Run mypy typechecking |
-| `make check` | Run all quality checks (test + lint + typecheck) |
-| `make server-run` | Start the server |
-| `make server-<target>` | Forward commands to server (e.g., `make server-alembic-upgrade`) |
-| `make sdk-<target>` | Forward commands to SDK (e.g., `make sdk-test`) |
-| `make engine-<target>` | Forward commands to engine (e.g., `make engine-test`) |
-
----
-
-## Next Steps
-
-- **Add more controls:** See [Controls](/concepts/controls#defining-controls) for examples and guidance
-
-- **Explore evaluators:** See [Evaluators](/concepts/evaluators/overview) or create custom evaluators. See [DeepEval example](/examples/deepeval) for custom evaluator examples
-
-- **Production setup:** Enable authentication — see the [Reference](/core/reference#authentication)
-
-- **Check examples:** See [Examples](/examples/overview) for real-world patterns
-
-> **💡 Pro Tip:** Start with simple regex controls, then graduate to AI-powered evaluators for complex safety checks.
-
 ## What’s Next
 
 <CardGroup cols={2}>
+
+  <Card title="UI Quickstart" icon="desktop" href="/core/ui-quickstart">
+    Manage agents and controls visually through the dashboard.
+  </Card>
 
   <Card title="Concepts" icon="lightbulb" href="/concepts">
     Learn about controls, selectors, evaluators, and actions.
@@ -340,6 +229,10 @@ The project uses a Makefile for common tasks:
 
   <Card title="Examples" icon="code" href="/examples/overview">
     See working integration examples with LangChain, CrewAI, and more.
+  </Card>
+
+  <Card title="Performance" icon="gauge-high" href="/concepts/performance">
+    See benchmark results showing Agent Control adds negligible latency.
   </Card>
 
 </CardGroup>
