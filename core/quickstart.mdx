@@ -253,7 +253,7 @@ _Performance tested on Apple M5 (16 GB RAM), Docker Compose (`postgres:16` + `ag
 |----------|---------|-------------|
 | `AGENT_CONTROL_URL` | `http://localhost:8000` | Server URL for SDK |
 | `AGENT_CONTROL_API_KEY` | — | API key for authentication (if enabled) |
-| `DB_URL` | `postgresql+psycopg://agent_control:agent_control@localhost:5432/agent_control` | Database connection string (SQLite: `sqlite+aiosqlite:///./agent_control.db`) |
+| `AGENT_CONTROL_DB_URL` | `postgresql+psycopg://agent_control:agent_control@localhost:5432/agent_control` | Preferred server database URL (SQLite: `sqlite+aiosqlite:///./agent_control.db`). Legacy aliases `DATABASE_URL` and `DB_URL` are still accepted. |
 | `GALILEO_API_KEY` | — | Required for Luna-2 AI evaluator |
 
 ### Server Configuration
