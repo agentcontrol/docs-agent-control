@@ -201,6 +201,11 @@
       }
     ]
   },
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-RN0NJCYSCQ"
+    }
+  },
   "seo": {
     "indexing": "all",
     "metatags": {
