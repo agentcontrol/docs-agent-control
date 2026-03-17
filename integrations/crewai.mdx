@@ -104,10 +104,12 @@ control_data = {
         "step_names": ["handle_ticket"],
         "stages": ["pre"],
     },
-    "selector": {"path": "input.ticket"},
-    "evaluator": {
-        "name": "regex",
-        "config": {"pattern": r"(?i)(admin|password|other user)"},
+    "condition": {
+        "selector": {"path": "input.ticket"},
+        "evaluator": {
+            "name": "regex",
+            "config": {"pattern": r"(?i)(admin|password|other user)"},
+        },
     },
     "action": {"decision": "deny"},
 }

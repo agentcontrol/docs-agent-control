@@ -159,21 +159,20 @@ control_definition = {
         "enabled": True,
         "execution": "server",
         "scope": {"stages": ["post"]},  # Apply to all steps at post stage
-        "selector": {},  # Pass full data (input + output)
-        "evaluator": {
-            "name": "deepeval-geval",  # From metadata.name
-            "config": {
-                "name": "Coherence",
-                "criteria": "Evaluate whether the response is coherent",
-                "evaluation_params": ["input", "actual_output"],
-                "threshold": 0.6,
-                "model": "gpt-4o",
+        "condition": {
+            "selector": {"path": "*"},  # Pass full data (input + output)
+            "evaluator": {
+                "name": "deepeval-geval",  # From metadata.name
+                "config": {
+                    "name": "Coherence",
+                    "criteria": "Evaluate whether the response is coherent",
+                    "evaluation_params": ["input", "actual_output"],
+                    "threshold": 0.6,
+                    "model": "gpt-4o",
+                },
             },
         },
-        "action": {
-            "decision": "deny",
-            "message": "Response failed coherence check",
-        },
+        "action": {"decision": "deny"},
     },
 }
 ```
@@ -182,7 +181,7 @@ control_definition = {
 
 - `execution: "server"` - Required field
 - `scope: {"stages": ["post"]}` - Apply to all function calls at post stage
-- `selector: {}` - Pass full data so evaluator gets both input and output
+- `condition.selector.path: "*"` - Pass full data so evaluator gets both input and output
 - `evaluation_params: ["input", "actual_output"]` - Both fields required for relevance checks
 
 ## Getting Started from Fresh Clone

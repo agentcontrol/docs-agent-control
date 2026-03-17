@@ -103,8 +103,7 @@ Key insight: controls are enforced server-side, so you can update rules in real 
 Controls are defined on the server with:
 
 - Scope: When to check (step types, stages: pre or post)
-- Selector: What to check (input, output, specific fields)
-- Evaluator: How to check (regex patterns, list matching, AI-based)
+- Condition: What and how to check
 - Action: What to do (allow, deny, steer, warn, log)
 
 Example from `setup_controls.py`:
@@ -116,10 +115,12 @@ control_data = ControlDefinition(
     enabled=True,
     execution="server",
     scope=ControlScope(step_types=["tool"], stages=["post"]),
-    selector=ControlSelector(path="output"),
-    evaluator=EvaluatorConfig(
-        name="regex",
-        config={"pattern": r"\b\d{3}-\d{2}-\d{4}\b"},
+    condition=ConditionNode(
+        selector=ControlSelector(path="output"),
+        evaluator=EvaluatorSpec(
+            name="regex",
+            config={"pattern": r"\b\d{3}-\d{2}-\d{4}\b"},
+        ),
     ),
     action=ControlAction(decision="deny"),
 )

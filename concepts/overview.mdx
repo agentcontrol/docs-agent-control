@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: Core concepts behind Agent Control — policies, controls, selectors, evaluators, and actions.
+description: Core concepts behind Agent Control — policies, controls, conditions, selectors, evaluators, and actions.
 ---
 
 Understanding these core concepts will help you get the most out of Agent Control. Start with the high-level [architecture](/concepts/architecture) to see how components fit together, then dive into [evaluators](/concepts/evaluators/overview) to understand how checks are implemented.
@@ -10,7 +10,7 @@ Understanding these core concepts will help you get the most out of Agent Contro
 A **[Control](/concepts/controls)** is a single rule that defines what to check and what to do when a condition is met.
 
 ```text
-Control = Scope + Selector + Evaluator + Action
+Control = Scope + Condition + Action
 ```
 
 Example: "If the output contains an SSN pattern, block the response."
@@ -20,14 +20,18 @@ Example: "If the output contains an SSN pattern, block the response."
   "name": "block-ssn-in-output",
   "execution": "server",
   "scope": { "step_types": ["llm"], "stages": ["post"] },
-  "selector": { "path": "output" },
-  "evaluator": {
-    "name": "regex",
-    "config": { "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b" }
+  "condition": {
+    "selector": { "path": "output" },
+    "evaluator": {
+      "name": "regex",
+      "config": { "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b" }
+    }
   },
   "action": { "decision": "deny" }
 }
 ```
+
+Leaf conditions pair a `selector` with an `evaluator`. Composite conditions can use `and`, `or`, and `not` to combine multiple leaf checks.
 
 ## Scope
 
