@@ -1,0 +1,35 @@
+---
+title: Performance
+description: Agent Control adds negligible latency to your AI agents. See benchmark results across real-world scenarios.
+icon: "gauge-high"
+---
+
+Agent Control is designed to stay out of your agent's critical path. The evaluation pipeline runs as a lightweight sidecar check — your agent sends a request to the Agent Control server, gets back a pass/fail decision, and continues. The entire round-trip typically completes in under 40 ms at the median, even with multiple controls active.
+
+This matters because AI agents already carry the latency cost of LLM inference (often hundreds of milliseconds to seconds per call). Adding safety controls shouldn't double that budget. Agent Control's architecture ensures it doesn't:
+
+- **Server-side evaluators execute in-process** — built-in evaluators (regex, list, JSON, SQL) run directly inside the Agent Control server with no external network calls, keeping evaluation time minimal.
+- **Controls scale linearly** — going from 1 control to 50 controls adds roughly 27 ms to the median evaluation time. You can layer comprehensive safety coverage without compounding latency.
+- **Agent initialization is fast** — registering or updating an agent with its tool steps completes in under 20 ms at the median, so cold starts and re-registrations don't stall your application.
+
+## Benchmark Results
+
+The following benchmarks were run on a local development environment to give you a directional sense of Agent Control's overhead. They are not production sizing guidance — your results will vary based on hardware, network topology, and evaluator complexity.
+
+| Endpoint | Scenario | RPS | p50 | p99 |
+|----------|----------|-----|-----|-----|
+| Agent init | Agent with 3 tool steps | 509 | 19 ms | 54 ms |
+| Evaluation | 1 control, 500-char content | 437 | 36 ms | 61 ms |
+| Evaluation | 10 controls, 500-char content | 349 | 35 ms | 66 ms |
+| Evaluation | 50 controls, 500-char content | 199 | 63 ms | 91 ms |
+| Controls refresh | 5-50 controls per agent | 273-392 | 20-27 ms | 27-61 ms |
+
+### Key takeaways
+
+- **All built-in evaluators perform similarly** — regex, list, JSON, and SQL evaluators all land within 40-46 ms p50 at 1 control. Choosing the right evaluator for your use case won't introduce a latency penalty.
+- **Agent init handles create and update identically** — the server uses a create-or-update operation, so there's no performance difference between first registration and subsequent updates.
+- **Zero errors under load** — all scenarios completed with a 0% error rate across the full benchmark duration.
+
+### Test environment
+
+Benchmarks were run on an Apple M5 with 16 GB RAM using Docker Compose (`postgres:16` + `agent-control`). Each scenario ran for 2 minutes with 5 concurrent users for latency measurements (p50, p99) and 10-20 concurrent users for throughput (RPS). RPS represents completed requests per second.

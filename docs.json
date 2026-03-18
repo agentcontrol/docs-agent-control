@@ -35,6 +35,7 @@
               "concepts/overview",
               "concepts/architecture",
               "concepts/controls",
+              "concepts/performance",
               {
                 "group": "Evaluators",
                 "pages": [
@@ -56,7 +57,8 @@
           {
             "group": "How-to Guides",
             "pages": [
-              "how-to/decorate-llm-tool-calls"
+              "how-to/decorate-llm-tool-calls",
+              "how-to/enable-authentication"
             ]
           },
           {
