@@ -4,22 +4,34 @@ description: Install Agent Control, start the server, and protect your first age
 icon: "rocket"
 ---
 
-Protect your AI agent in 4 simple steps.
+The instructions on this page describe two ways to install Agent Control for testing in your local environment:
+
+- Quick setup using prebuilt Docker images.
+- Local development using the `agent-control` GitHub repository.
 
 ## Prerequisites
 
 - **Python 3.12+**
 
-- **Docker**
+- **uv**
 
-<Tip>
-**Quick setup (no repo cloning required)** - Copy this into your terminal or directly paste into your coding agent to start the Agent Control server, UI:
+- **Docker** — for quick setup
+
+- **Node.js 18+** — for the local development web dashboard (optional)
+
+This tutorial was tested on macOS.
+
+## Install Agent Control
+
+### Quick setup (Docker)
+
+To start the Agent Control server and UI, copy the following command into your terminal or paste into your coding agent:
 
 ```bash
 curl -L https://raw.githubusercontent.com/agentcontrol/agent-control/refs/heads/main/docker-compose.yml | docker compose -f - up -d
 ```
 
-Then, install sdk in your virtual env:
+Then, install the SDK in your virtual environment:
 
 ```bash
 uv venv
@@ -27,31 +39,19 @@ source .venv/bin/activate
 uv pip install agent-control-sdk
 ```
 
-**What this does:**
+What this does:
 
 - ✅ Starts Agent Control server at `http://localhost:8000`
 - ✅ Starts UI dashboard at `http://localhost:8000`
 - ✅ Installs Python SDK (`agent-control-sdk`)
 
-**Next:** Jump to [Step 3: Register your agent](#step-3-register-your-agent)
+Confirm you can access the Agent Control UI at `http://localhost:8000` and continue to [Register your agent](#register-your-agent).
 
-</Tip>
+### Local development (GitHub repository)
 
+Start the AgentControl server manually for local development.
 
-**Alternatively**, for local development with the Agent Control repository, clone the repo and follow all steps below.
-
-
-## Step 1: Start the Agent Control Server
-
-Startup AgentControl server manually for local development.
-
-### Local development (cloning the repo)
-
-Prerequisites:
-
-- **uv** — Fast Python package manager (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
-
-- **Node.js 18+** — For the web dashboard (optional)
+#### Clone the repository and start Agent Control
 
 ```bash
 
@@ -80,7 +80,7 @@ make ui-dev
 
 > 💡 **Verify the server:** Open [http://localhost:8000/health](http://localhost:8000/health) — you should see `{"status": "healthy", "version": "..."}`.
 
-## Step 2: Install the SDK
+#### Install the SDK
 
 In your agent application project:
 
@@ -88,7 +88,7 @@ In your agent application project:
 uv pip install agent-control-sdk
 ```
 
-## Step 3: Register Your Agent
+## Register Your Agent
 
 Agent must be registered with the server. You should also add `@control` decorator around tools and LLM call functions.
 
@@ -128,7 +128,7 @@ async def main():
 asyncio.run(main())
 ```
 
-## Step 4: Add Controls
+## Add Controls
 
 The easiest way to add controls is through the UI — see the [UI Quickstart](/core/ui-quickstart) for a step-by-step guide. Alternatively, use the SDK as shown below or call the API directly.
 

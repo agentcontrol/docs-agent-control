@@ -80,7 +80,7 @@ Flexible value matching with multiple modes and logic options.
 | `logic` | string | `"any"` | `"any"` = match any value, `"all"` = match all |
 | `match_on` | string | `"match"` | `"match"` = trigger when found, `"no_match"` = trigger when NOT found |
 | `match_mode` | string | `"exact"` | `"exact"` = full string match, `"contains"` = word-boundary match |
-| `case_sensitive` | bool | `false` | Case sensitivity |
+| `case_sensitive` | bool | `False` | Case sensitivity |
 
 <Note>
 `match_mode="contains"` uses word-boundary matching, not generic substring matching. For example, `"admin"` will match `"admin user"` but will NOT match `"sysadministrator"`.
@@ -96,7 +96,7 @@ Flexible value matching with multiple modes and logic options.
     "values": ["admin", "root", "sudo", "superuser"],
     "logic": "any",
     "match_mode": "contains",
-    "case_sensitive": false
+    "case_sensitive": False
   }
 }
 
