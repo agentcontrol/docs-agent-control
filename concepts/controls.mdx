@@ -429,17 +429,10 @@ Via curl:
 
 ```bash
 
-# Step 1: Create control
-
 CONTROL_ID=$(curl -X PUT http://localhost:8000/api/v1/controls \
   -H "Content-Type: application/json" \
-  -d '{"name": "block-ssn-output"}' | jq -r '.control_id')
-
-# Step 2: Set control configuration
-
-curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
-  -H "Content-Type: application/json" \
   -d '{
+    "name": "block-ssn-output",
     "data": {
       "description": "Block Social Security Numbers in responses",
       "enabled": true,
@@ -454,7 +447,7 @@ curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
       },
       "action": {"decision": "deny"}
     }
-  }'
+  }' | jq -r '.control_id')
 ```
 
 Regex pattern note: the pattern itself is `\b\d{3}-\d{2}-\d{4}\b`. Python raw strings render that as `r"\b\d{3}-\d{2}-\d{4}\b"`, while JSON payloads must escape backslashes as `"\\b\\d{3}-\\d{2}-\\d{4}\\b"`.
@@ -498,15 +491,10 @@ Via curl:
 
 ```bash
 
-# Create control with Luna-2 evaluator
-
 CONTROL_ID=$(curl -X PUT http://localhost:8000/api/v1/controls \
   -H "Content-Type: application/json" \
-  -d '{"name": "block-toxic-input"}' | jq -r '.control_id')
-
-curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
-  -H "Content-Type: application/json" \
   -d '{
+    "name": "block-toxic-input",
     "data": {
       "description": "Block toxic or harmful user messages",
       "enabled": true,
@@ -525,7 +513,7 @@ curl -X PUT "http://localhost:8000/api/v1/controls/$CONTROL_ID/data" \
       },
       "action": {"decision": "deny"}
     }
-  }'
+  }' | jq -r '.control_id')
 ```
 
 > **Note**: For the Luna-2 evaluator, set the `GALILEO_API_KEY` environment variable. See the [Evaluators](/concepts/evaluators/overview) for all available evaluators.
