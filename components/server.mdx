@@ -173,7 +173,7 @@ GET /api/v1/agents/{agent_name}/controls
 ```bash
 # Create control
 PUT /api/v1/controls
-Body: { "name": "my-control" }
+Body: { "name": "my-control", "data": {...} }
 
 # List controls (cursor-based)
 GET /api/v1/controls?cursor=123&limit=100
@@ -188,7 +188,7 @@ Body: { "name": "new-name", "enabled": true }
 # Get control data
 GET /api/v1/controls/{control_id}/data
 
-# Update control data
+# Update existing control data
 PUT /api/v1/controls/{control_id}/data
 Body: { "data": {...} }
 

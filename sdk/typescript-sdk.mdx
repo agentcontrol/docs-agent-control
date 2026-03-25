@@ -51,6 +51,24 @@ console.log(agents.agents.length);
 
 const created = await client.controls.create({
   name: "deny-pii",
+  data: {
+    action: { decision: "deny" },
+    description: "Block SSNs in output",
+    enabled: true,
+    evaluator: {
+      name: "regex",
+      config: {
+        pattern: "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+      },
+    },
+    execution: "server",
+    scope: {
+      stages: ["post"],
+    },
+    selector: {
+      path: "output",
+    },
+  },
 });
 console.log(created.controlId);
 ```
