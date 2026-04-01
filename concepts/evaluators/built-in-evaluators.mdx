@@ -79,11 +79,15 @@ Flexible value matching with multiple modes and logic options.
 | `values` | list | required | Values to match against |
 | `logic` | string | `"any"` | `"any"` = match any value, `"all"` = match all |
 | `match_on` | string | `"match"` | `"match"` = trigger when found, `"no_match"` = trigger when NOT found |
-| `match_mode` | string | `"exact"` | `"exact"` = full string match, `"contains"` = word-boundary match |
+| `match_mode` | string | `"exact"` | `"exact"` = full string match, `"contains"` = word-boundary match, `"starts_with"` = prefix match, `"ends_with"` = suffix match |
 | `case_sensitive` | bool | `false` | Case sensitivity |
 
 <Note>
 `match_mode="contains"` uses word-boundary matching, not generic substring matching. For example, `"admin"` will match `"admin user"` but will NOT match `"sysadministrator"`.
+</Note>
+
+<Note>
+`match_mode="starts_with"` and `match_mode="ends_with"` use literal string prefix/suffix matching. They are not path-boundary aware, so `"/safe"` will also match `"/safezone"` when using `starts_with`.
 </Note>
 
 <Accordion title="Examples">
@@ -106,6 +110,27 @@ Flexible value matching with multiple modes and logic options.
   "config": {
     "values": ["APPROVED", "VERIFIED"],
     "match_on": "no_match",
+    "logic": "any"
+  }
+}
+
+// Allowlist: only permit writes under approved prefixes
+{
+  "name": "list",
+  "config": {
+    "values": ["/workspace/", "/tmp/scratch/"],
+    "match_on": "no_match",
+    "match_mode": "starts_with",
+    "logic": "any"
+  }
+}
+
+// Block file types by suffix
+{
+  "name": "list",
+  "config": {
+    "values": [".env", ".pem", ".key"],
+    "match_mode": "ends_with",
     "logic": "any"
   }
 }
