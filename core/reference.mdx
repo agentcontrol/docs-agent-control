@@ -72,8 +72,6 @@ Controls → Agents
 | `steer` | Raise `ControlSteerError` with steering context for correction and retry |
 | `observe` | Record the match for audit and observability without blocking execution |
 
-Legacy values `allow`, `warn`, and `log` are accepted on input but normalized to `observe`.
-
 Priority semantics:
 
 1. **Deny wins** — if any `deny` control matches, execution is blocked.

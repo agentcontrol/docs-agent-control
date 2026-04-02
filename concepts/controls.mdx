@@ -290,10 +290,6 @@ Fields:
 
 - `metadata`: Optional additional context (JSON object)
 
-<Note>
-  Legacy action values `allow`, `warn`, and `log` are still accepted on input but are automatically normalized to `observe`.
-</Note>
-
 ### Important: "Deny Wins" Semantics
 
 Agent Control uses "deny wins" logic: if **any** enabled control with a `deny` action matches, the request is blocked regardless of other control results. This ensures fail-safe behavior.
