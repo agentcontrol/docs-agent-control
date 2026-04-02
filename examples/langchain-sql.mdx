@@ -135,7 +135,7 @@ The SQL is evaluated using the `sql` evaluator:
 - Parses the query
 - Checks for blocked operations (DROP, DELETE, etc.)
 - Validates LIMIT clauses
-- Returns deny/allow decision
+- Returns deny/observe decision
 
 ### 4. Fail-Safe Error Handling
 
@@ -200,11 +200,11 @@ Agent Control Server
     ↓
 SQL Evaluator Execution
     ↓
-DENY (blocks DROP) or ALLOW (safe query)
+DENY (blocks DROP) or PASS (safe query)
     ↓
 Back to Decorator
     ↓
-Raise ControlViolationError (DENY) or Execute (ALLOW)
+Raise ControlViolationError (DENY) or Execute (PASS)
 ```
 
 ## Files

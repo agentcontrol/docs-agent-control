@@ -104,7 +104,7 @@ Controls are defined on the server with:
 
 - Scope: When to check (step types, stages: pre or post)
 - Condition: What and how to check
-- Action: What to do (allow, deny, steer, warn, log)
+- Action: What to do (deny, steer, observe)
 
 Example from `setup_controls.py`:
 
@@ -160,7 +160,7 @@ Controls can be updated on the server without code changes:
 
 - Enable or disable controls
 - Update patterns and rules
-- Change enforcement decisions (deny to warn)
+- Change enforcement decisions (deny to observe)
 - Add new controls to existing agents
 
 ## Configuration
