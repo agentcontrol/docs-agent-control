@@ -282,15 +282,11 @@ Fields:
 
 - `decision`: The enforcement action to take
 
-  - `"allow"` - Continue execution (useful for allowlist controls)
-
   - `"deny"` - Hard stop execution (blocks the request)
 
   - `"steer"` - Provides corrective guidance to help agents satisfy control requirement
 
-  - `"warn"` - Log a warning but continue execution
-
-  - `"log"` - Log the match for observability only
+  - `"observe"` - Record the match for audit and observability without blocking execution
 
 - `metadata`: Optional additional context (JSON object)
 
@@ -308,12 +304,12 @@ Agent Control uses "deny wins" logic: if **any** enabled control with a `deny` a
 }
 ```
 
-### Example 2: Warn without blocking
+### Example 2: Observe without blocking
 
 ```json
 {
   "action": {
-    "decision": "warn"
+    "decision": "observe"
   }
 }
 ```

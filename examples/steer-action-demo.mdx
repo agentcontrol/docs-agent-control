@@ -1,18 +1,17 @@
 ---
 title: Steer Action Demo
-description: Banking transfer agent showcasing allow, deny, warn, and steer actions.
+description: Banking transfer agent showcasing observe, deny, and steer actions.
 ---
 
 A realistic AI banking agent that processes wire transfers with compliance controls, fraud detection, and approval workflows.
 
 ## What This Demonstrates
 
-This example shows all three AgentControl action types in a real-world banking scenario:
+This example shows the three Agent Control action types in a real-world banking scenario:
 
-- Allow: Auto-approve simple, low-risk transfers
 - Deny: Hard-block compliance violations (OFAC sanctions, high fraud)
-- Warn: Log suspicious activity without blocking (new recipients)
 - Steer: Guide agent through approval workflows (2FA, manager approval)
+- Observe: Record suspicious activity for audit without blocking (new recipients)
 
 ## Understanding Steer Actions
 
@@ -26,7 +25,7 @@ Key difference from deny:
 ## Demo Flow
 
 ```text
-Request Transfer → Steer Triggered → Correct Issue → Retry Transfer → Allow Success
+Request Transfer → Steer Triggered → Correct Issue → Retry Transfer → Success
 ```
 
 ## Quick Start
@@ -75,11 +74,11 @@ Expected:
 
 ## What You Will Learn
 
-- When to use deny vs warn vs steer actions
+- When to use deny vs steer vs observe actions
 - How to integrate human feedback (2FA, approvals) into agent workflows
 - How structured steering context enables deterministic agent workflows
 - Real-world compliance patterns (OFAC, AML, fraud prevention)
-- The steer to correct to retry to allow lifecycle
+- The steer → correct → retry lifecycle
 
 ## How It Works
 
@@ -89,7 +88,7 @@ The agent uses AgentControl to gate wire transfers through five controls:
 |---|---|---|
 | OFAC Sanctions | Deny | Destination is sanctioned country |
 | High Fraud | Deny | Fraud score > 0.8 |
-| New Recipient | Warn | Recipient not in known list |
+| New Recipient | Observe | Recipient not in known list |
 | 2FA Required | Steer | Amount >= 10,000 without 2FA |
 | Manager Approval | Steer | Amount >= 10,000 without approval |
 
@@ -141,7 +140,7 @@ Key fields:
 
 ## Files
 
-- `setup_controls.py` - Creates the five banking controls (deny, warn, steer)
+- `setup_controls.py` - Creates the five banking controls (deny, steer, observe)
 - `autonomous_agent_demo.py` - Interactive agent with deterministic steer handling
 
 ## Source Code

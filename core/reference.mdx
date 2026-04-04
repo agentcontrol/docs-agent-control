@@ -70,9 +70,7 @@ Controls → Agents
 |--------|----------|
 | `deny` | Block the request/response, raise `ControlViolationError` |
 | `steer` | Raise `ControlSteerError` with steering context for correction and retry |
-| `allow` | Permit execution (no effect if a `deny` control also matches) |
-| `warn` | Log a warning but allow execution |
-| `log` | Silent logging for monitoring only |
+| `observe` | Record the match for audit and observability without blocking execution |
 
 Priority semantics:
 
@@ -80,7 +78,7 @@ Priority semantics:
 
 2. **Steer second** — if any `steer` control matches (and no deny), steering context is returned.
 
-3. **Allow/warn/log** — observability actions that do not block execution.
+3. **Observe** — non-blocking observability action that does not affect execution.
 
 You can read more in [Concepts](/concepts/overview)
 

@@ -68,7 +68,7 @@ AgentControlPlugin (before/after each stage)
   ↓
 Agent Control Server
   ↓
-Hard Block (deny) or Allow
+Hard Block (deny) or Observe
 ```
 
 **Steering Pattern:**
@@ -94,7 +94,7 @@ Strands Agent
      ↓            ↓
   Steering     Plugin (hard blocks)
      ↓            ↓
-  Guide()    Allow/Deny
+  Guide()    Observe/Deny
      ↓
   LLM Retry
 ```
