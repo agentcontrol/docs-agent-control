@@ -1,0 +1,256 @@
+---
+title: "Create a control from a template"
+description: "Define a parameterized template, preview the rendered control, and create it on the server."
+---
+
+This guide walks you through creating a control using a template instead of writing raw JSON. You will:
+
+- Define a template that blocks tool outputs matching a configurable regex pattern
+- Preview the rendered control with the `/control-templates/render` endpoint
+- Create the control on the server
+- Update the template parameters without changing the control's identity or agent associations
+
+## Prerequisites
+
+- Python 3.12+, [uv](https://docs.astral.sh/uv/), Docker
+- Agent Control server running (see [Quickstart](/core/quickstart))
+
+<Steps>
+<Step title="Define the template">
+
+A template has **parameter definitions** (typed inputs) and a **definition template** (the control structure with `$param` bindings).
+
+This template creates a regex-based output filter with two configurable parameters:
+
+```python
+template = {
+    "description": "Block tool outputs matching a regex pattern",
+    "parameters": {
+        "block_pattern": {
+            "type": "regex_re2",
+            "label": "Block pattern",
+            "description": "RE2 regex to match against tool output",
+            "required": True,
+        },
+        "target_tools": {
+            "type": "string_list",
+            "label": "Target tools",
+            "description": "Tool step names to monitor (leave empty for all tools)",
+            "default": [],
+        },
+    },
+    "definition_template": {
+        "execution": "server",
+        "scope": {
+            "step_types": ["tool"],
+            "step_names": {"$param": "target_tools"},
+            "stages": ["post"],
+        },
+        "condition": {
+            "selector": {"path": "output"},
+            "evaluator": {
+                "name": "regex",
+                "config": {"pattern": {"$param": "block_pattern"}},
+            },
+        },
+        "action": {"decision": "deny"},
+    },
+}
+```
+
+Each `{"$param": "..."}` will be replaced with the caller-provided value at render time.
+
+</Step>
+<Step title="Preview the rendered control">
+
+Use the render endpoint to see what the concrete control looks like before persisting it. This is useful for validation and UI previews.
+
+```python
+import asyncio
+from agent_control import AgentControlClient
+
+SERVER_URL = "http://localhost:8000"
+
+async def preview():
+    async with AgentControlClient(base_url=SERVER_URL) as client:
+        resp = await client.http_client.post(
+            "/api/v1/control-templates/render",
+            json={
+                "template": template,
+                "template_values": {
+                    "block_pattern": r"\b\d{3}-\d{2}-\d{4}\b",
+                    "target_tools": ["search_db", "lookup_user"],
+                },
+            },
+        )
+        resp.raise_for_status()
+        print(resp.json())
+
+asyncio.run(preview())
+```
+
+The response contains the fully rendered `ControlDefinition` with all `$param` bindings substituted:
+
+```json
+{
+  "description": "Block tool outputs matching a regex pattern",
+  "execution": "server",
+  "scope": {
+    "step_types": ["tool"],
+    "step_names": ["search_db", "lookup_user"],
+    "stages": ["post"]
+  },
+  "condition": {
+    "selector": { "path": "output" },
+    "evaluator": {
+      "name": "regex",
+      "config": { "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b" }
+    }
+  },
+  "action": { "decision": "deny" },
+  "template": { "..." : "..." },
+  "template_values": { "..." : "..." }
+}
+```
+
+<Tip>
+  The render endpoint does not persist anything. Use it freely for previews and form validation.
+</Tip>
+
+</Step>
+<Step title="Create the control">
+
+Pass the template and values in the `data` field of the standard create endpoint:
+
+```python
+from agent_control import AgentControlClient, controls
+
+async def create():
+    async with AgentControlClient(base_url=SERVER_URL) as client:
+        result = await controls.create_control(
+            client,
+            name="block-ssn-in-tool-output",
+            data={
+                "template": template,
+                "template_values": {
+                    "block_pattern": r"\b\d{3}-\d{2}-\d{4}\b",
+                    "target_tools": ["search_db", "lookup_user"],
+                },
+            },
+        )
+        print(f"Control created: {result['control_id']}")
+
+asyncio.run(create())
+```
+
+Via curl:
+
+```bash
+curl -X PUT http://localhost:8000/api/v1/controls \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "block-ssn-in-tool-output",
+    "data": {
+      "template": {
+        "description": "Block tool outputs matching a regex pattern",
+        "parameters": {
+          "block_pattern": {
+            "type": "regex_re2",
+            "label": "Block pattern",
+            "required": true
+          },
+          "target_tools": {
+            "type": "string_list",
+            "label": "Target tools",
+            "default": []
+          }
+        },
+        "definition_template": {
+          "execution": "server",
+          "scope": {
+            "step_types": ["tool"],
+            "step_names": {"$param": "target_tools"},
+            "stages": ["post"]
+          },
+          "condition": {
+            "selector": {"path": "output"},
+            "evaluator": {
+              "name": "regex",
+              "config": {"pattern": {"$param": "block_pattern"}}
+            }
+          },
+          "action": {"decision": "deny"}
+        }
+      },
+      "template_values": {
+        "block_pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+        "target_tools": ["search_db", "lookup_user"]
+      }
+    }
+  }'
+```
+
+The server renders the template, validates the result, and stores the concrete control alongside the template metadata.
+
+</Step>
+<Step title="Attach to an agent">
+
+Associate the control with your agent using the standard endpoint:
+
+```python
+async def attach(control_id: int):
+    async with AgentControlClient(base_url=SERVER_URL) as client:
+        await client.http_client.post(
+            f"/api/v1/agents/my-agent/controls/{control_id}"
+        )
+        print("Control attached")
+```
+
+</Step>
+<Step title="Update template parameters">
+
+Later, update just the parameter values. The control ID and all agent associations are preserved:
+
+```python
+async def update(control_id: int):
+    async with AgentControlClient(base_url=SERVER_URL) as client:
+        resp = await client.http_client.put(
+            f"/api/v1/controls/{control_id}/data",
+            json={
+                "data": {
+                    "template": template,
+                    "template_values": {
+                        "block_pattern": r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b",
+                        "target_tools": ["search_db", "lookup_user", "export_data"],
+                    },
+                },
+            },
+        )
+        resp.raise_for_status()
+        print("Control updated with new pattern and tools")
+```
+
+The server re-renders the template with the new values, validates the result, and updates the stored control. The `enabled` state is preserved.
+
+<Note>
+  You cannot update a template-backed control with a raw `ControlDefinition`. The server rejects this to prevent losing template metadata.
+</Note>
+
+</Step>
+</Steps>
+
+---
+
+## Key Points
+
+- **Templates render server-side** — the evaluation engine sees a standard `ControlDefinition` with no runtime template overhead.
+- **Preview before committing** — use `POST /control-templates/render` to validate and preview without persisting.
+- **Update without re-creating** — change parameter values via `PUT /controls/{id}/data` to update in place, preserving the control ID and agent associations.
+- **Enable/disable independently** — use `PATCH /controls/{id}` to toggle `enabled` without touching the template.
+- **Save drafts** — create a control with incomplete values to save as an unrendered draft (`enabled: false`), then complete it later.
+
+## Next Steps
+
+- [Control Templates concept](/concepts/control-templates) — full reference on parameter types, binding syntax, and validation
+- [Controls](/concepts/controls) — understand the control model
+- [Python SDK](/sdk/python-sdk) — SDK reference

@@ -1,0 +1,287 @@
+---
+title: Control Templates
+description: Create controls from reusable, parameterized templates instead of hand-editing raw JSON.
+---
+
+Control templates are a **parameterized authoring layer** for creating controls. Instead of writing a full control definition by hand, you define a template with typed parameters and provide values — the server renders the concrete control for you.
+
+The evaluation engine only sees the rendered control. Templates add no runtime overhead.
+
+## Why Templates?
+
+Without templates, updating common control patterns (like tool allowlists or regex filters) requires understanding the full control JSON structure. Templates shift the burden from "edit JSON structure" to "provide typed parameter values."
+
+- **Reusable** — define a pattern once, instantiate it with different values
+- **Type-safe** — parameters are validated before rendering
+- **Familiar** — the rendered output is a standard `ControlDefinition`, evaluated the same way as any other control
+
+## How It Works: Render Before Save
+
+```text
+TemplateDefinition + parameter values
+        ↓
+  [Server-side render]
+  [Type-coerce & substitute $param bindings]
+        ↓
+  ControlDefinition (concrete)
+        ↓
+  [Validate against existing schema]
+        ↓
+  Stored in controls.data JSONB
+```
+
+The evaluation engine reads the same concrete `ControlDefinition` whether it came from a template or a raw API call. No template logic runs in the hot path.
+
+---
+
+## Template Structure
+
+A template has two parts: **parameter definitions** and a **definition template** containing `$param` bindings.
+
+```json
+{
+  "template": {
+    "description": "Block messages matching a regex pattern",
+    "parameters": {
+      "block_pattern": {
+        "type": "regex_re2",
+        "label": "Block pattern",
+        "description": "RE2 regex to match against output",
+        "required": true
+      },
+      "target_stages": {
+        "type": "string_list",
+        "label": "Stages",
+        "default": ["post"]
+      }
+    },
+    "definition_template": {
+      "execution": "server",
+      "scope": {
+        "step_types": ["tool"],
+        "stages": { "$param": "target_stages" }
+      },
+      "condition": {
+        "selector": { "path": "output" },
+        "evaluator": {
+          "name": "regex",
+          "config": { "pattern": { "$param": "block_pattern" } }
+        }
+      },
+      "action": { "decision": "deny" }
+    }
+  },
+  "template_values": {
+    "block_pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+    "target_stages": ["post"]
+  }
+}
+```
+
+When rendered, every `{"$param": "param_name"}` is replaced with the corresponding value from `template_values`, producing a standard control definition.
+
+---
+
+## Parameter Types
+
+Templates support five parameter types in v1:
+
+| Type | JSON Value | Description |
+|------|-----------|-------------|
+| `string` | `"text"` | Simple text value |
+| `string_list` | `["a", "b"]` | Array of strings |
+| `enum` | `"choice"` | Constrained to `allowed_values` |
+| `boolean` | `true` / `false` | Boolean flag |
+| `regex_re2` | `"^pattern$"` | RE2 regex, validated at definition time |
+
+### Parameter Definition Fields
+
+Each parameter supports:
+
+- `label` (required) — human-readable name
+- `description` (optional) — what the parameter controls
+- `required` (default: `true`) — must the caller provide a value?
+- `default` (optional) — fallback when no value is provided
+- `ui_hint` (optional) — rendering hint for UI clients
+
+### String
+
+```json
+{
+  "deny_message": {
+    "type": "string",
+    "label": "Denial message",
+    "default": "Request blocked by policy",
+    "placeholder": "Enter a message..."
+  }
+}
+```
+
+### String List
+
+```json
+{
+  "approved_tools": {
+    "type": "string_list",
+    "label": "Approved tools",
+    "description": "Tool names that are allowed to execute"
+  }
+}
+```
+
+### Enum
+
+```json
+{
+  "action_type": {
+    "type": "enum",
+    "label": "Action",
+    "allowed_values": ["deny", "warn", "log"],
+    "default": "deny"
+  }
+}
+```
+
+### Boolean
+
+```json
+{
+  "case_sensitive": {
+    "type": "boolean",
+    "label": "Case sensitive",
+    "default": false
+  }
+}
+```
+
+### Regex (RE2)
+
+```json
+{
+  "pii_pattern": {
+    "type": "regex_re2",
+    "label": "PII detection pattern",
+    "placeholder": "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+  }
+}
+```
+
+---
+
+## `$param` Binding Syntax
+
+The only binding construct is:
+
+```json
+{ "$param": "parameter_name" }
+```
+
+### Rules
+
+1. **Whole-value replacement only** — `$param` replaces the entire JSON value, not a substring within a string. There is no string interpolation.
+
+   ```json
+   // Correct — replaces the entire value
+   { "pattern": { "$param": "my_pattern" } }
+
+   // Not supported — no string interpolation
+   { "pattern": "prefix-{$param: my_pattern}-suffix" }
+   ```
+
+2. **All parameters must be referenced** — every defined parameter must appear as a `$param` binding somewhere in the definition template. Unused parameters are rejected.
+
+3. **All `$param` references must be defined** — a `$param` binding that references an undefined parameter is rejected.
+
+4. **`$param` is reserved** — you cannot use `{"$param": ...}` as a literal value in your evaluator config.
+
+---
+
+## Unrendered (Draft) Templates
+
+You can save a template with incomplete parameter values as a **draft**. These are stored as `UnrenderedTemplateControl`:
+
+- Always persisted with `enabled: false`
+- Excluded from evaluation (no concrete condition/action fields)
+- Can be updated later with complete values to produce a rendered control
+
+This is useful for saving work-in-progress templates before all parameter values are known.
+
+---
+
+## Template Metadata on Controls
+
+Template-backed controls carry their template metadata alongside the rendered definition. This enables re-editing: you can retrieve a control, modify its `template_values`, and update it — the server re-renders and validates the result.
+
+Key behaviors:
+
+- **`enabled` is not template-owned** — the template definition cannot set `enabled`. Re-rendering preserves the current `enabled` value. Toggle it independently via `PATCH /controls/{id}`.
+- **`description` is template-owned** — it comes from the template definition and cannot be patched independently.
+- **Raw updates are rejected** — you cannot update a template-backed control with a raw `ControlDefinition`. You must provide updated `template` and `template_values`.
+
+---
+
+## Validation
+
+### Before Rendering (Parameter Validation)
+
+- Unknown parameter keys are rejected
+- Missing required values (with no default) are rejected
+- Enum values are checked against `allowed_values`
+- RE2 regex syntax is validated
+- JSON types are validated (string vs boolean vs array)
+
+### After Rendering (Control Validation)
+
+The rendered output is validated as a standard `ControlDefinition`:
+
+- Parsed against the control schema
+- Evaluator configs are validated
+- Agent-scoped evaluators are rejected (not supported in v1)
+
+When rendered control validation fails, the server maps errors back to the closest template parameter, so error messages reference `template_values.<param_name>` rather than internal JSON paths.
+
+---
+
+## Listing and Filtering
+
+The `GET /api/v1/controls` endpoint supports filtering by template status:
+
+- `template_backed=true` — only template-backed controls
+- `template_backed=false` — only raw (non-template) controls
+
+Each control in the response includes:
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `template_backed` | `bool` | Whether the control was created from a template |
+| `template_rendered` | `bool \| null` | `true` = rendered template, `false` = unrendered draft, `null` = raw control |
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/control-templates/render` | Preview a rendered control without persisting |
+| `PUT` | `/api/v1/controls` | Create control (accepts raw or template input) |
+| `PUT` | `/api/v1/controls/{id}/data` | Update control data (re-renders for template-backed) |
+
+See the [API Reference](/core/reference) for full details.
+
+---
+
+## V1 Limitations
+
+- **No template catalogs** — callers provide the template definition on each request. Server-managed reusable template libraries are planned for a future release.
+- **No multi-control templates** — each template produces exactly one control.
+- **No agent-scoped evaluators** — templates cannot reference evaluators in `agent:evaluator` format.
+- **No `$param` escaping** — there is no way to produce a literal `{"$param": ...}` key in evaluator config.
+- **No string interpolation** — `$param` replaces entire JSON values only.
+
+---
+
+## Next Steps
+
+- [How-to: Create a control from a template](/how-to/create-control-from-template) — step-by-step walkthrough
+- [Controls](/concepts/controls) — understand the control model that templates render into
+- [Evaluators](/concepts/evaluators/overview) — available evaluators for use in template definitions

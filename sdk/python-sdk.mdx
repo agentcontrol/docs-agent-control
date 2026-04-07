@@ -244,6 +244,70 @@ If `agent-control-models` is installed, these classes are available:
 - `ProtectionResult`
 - `HealthResponse`
 
+## Control Templates
+
+The SDK provides helpers for working with [control templates](/concepts/control-templates):
+
+### Render a Template Preview
+
+```python
+from agent_control import AgentControlClient, controls
+
+async with AgentControlClient() as client:
+    rendered = await controls.render_control_template(
+        client,
+        template={
+            "description": "Block PII in output",
+            "parameters": {
+                "pii_pattern": {
+                    "type": "regex_re2",
+                    "label": "PII pattern",
+                }
+            },
+            "definition_template": {
+                "execution": "server",
+                "scope": {"step_types": ["tool"], "stages": ["post"]},
+                "condition": {
+                    "selector": {"path": "output"},
+                    "evaluator": {
+                        "name": "regex",
+                        "config": {"pattern": {"$param": "pii_pattern"}},
+                    },
+                },
+                "action": {"decision": "deny"},
+            },
+        },
+        template_values={"pii_pattern": r"\b\d{3}-\d{2}-\d{4}\b"},
+    )
+```
+
+### Create a Control from a Template
+
+Pass `template` and `template_values` in the `data` argument of `create_control()`:
+
+```python
+result = await controls.create_control(
+    client,
+    name="block-ssn-output",
+    data={
+        "template": template,
+        "template_values": {"pii_pattern": r"\b\d{3}-\d{2}-\d{4}\b"},
+    },
+)
+```
+
+### Convert a Stored Control Back to Template Input
+
+```python
+template_input = controls.to_template_control_input(control_data)
+```
+
+### List Template-Backed Controls
+
+```python
+template_controls = await controls.list_controls(client, template_backed=True)
+```
+
 ## Configuration
 
 ### Environment Variables

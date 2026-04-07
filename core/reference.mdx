@@ -112,11 +112,21 @@ Default: `http://localhost:8000/api/v1`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `PUT` | `/controls` | Create control |
-| `GET` | `/controls` | List controls |
+| `PUT` | `/controls` | Create control (accepts raw or [template](/concepts/control-templates) input) |
+| `GET` | `/controls` | List controls (supports `template_backed` filter) |
 | `GET` | `/controls/{control_id}` | Get control |
-| `PATCH` | `/controls/{control_id}` | Update control |
+| `GET` | `/controls/{control_id}/data` | Get control data (includes template metadata if template-backed) |
+| `PUT` | `/controls/{control_id}/data` | Update control data (re-renders for template-backed controls) |
+| `PATCH` | `/controls/{control_id}` | Update control metadata (`name`, `enabled`) |
 | `DELETE` | `/controls/{control_id}` | Delete control |
+
+**Control Templates**:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/control-templates/render` | Preview a rendered control from a template without persisting |
+
+See [Control Templates](/concepts/control-templates) for the full template authoring guide.
 
 **System**:
 

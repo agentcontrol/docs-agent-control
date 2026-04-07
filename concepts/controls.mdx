@@ -393,6 +393,16 @@ Putting it all together - a control that blocks Social Security Numbers in tool 
 
 ---
 
+## Control Templates
+
+Controls can also be created from **parameterized templates**. Instead of writing the full JSON definition, you define a template with typed parameters (`string`, `string_list`, `enum`, `boolean`, `regex_re2`) and provide values — the server renders the concrete control for you.
+
+Template-backed controls are evaluated identically to raw controls. Templates are an authoring convenience with zero runtime overhead.
+
+See [Control Templates](/concepts/control-templates) for the full guide, or [How-to: Create a control from a template](/how-to/create-control-from-template) for a step-by-step walkthrough.
+
+---
+
 ## Defining Controls
 
 You can create and configure controls via the SDK, API, or UI.

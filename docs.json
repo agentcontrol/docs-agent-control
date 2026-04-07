@@ -35,6 +35,7 @@
               "concepts/overview",
               "concepts/architecture",
               "concepts/controls",
+              "concepts/control-templates",
               "concepts/performance",
               {
                 "group": "Evaluators",
@@ -58,6 +59,7 @@
             "group": "How-to Guides",
             "pages": [
               "how-to/decorate-llm-tool-calls",
+              "how-to/create-control-from-template",
               "how-to/enable-authentication"
             ]
           },

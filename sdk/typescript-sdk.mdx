@@ -135,6 +135,61 @@ Current public exports:
 - generated request and response types via package root type exports (models and operations)
 - utility types: `AgentControlInitOptions`, `StepSchema`, `ControlAction`, `EvaluationResult`, `JsonPrimitive`, `JsonValue`, `JsonObject`
 
+## Control Templates
+
+The TypeScript SDK includes generated types and methods for [control templates](/concepts/control-templates):
+
+### Render a Template Preview
+
+```ts
+const rendered = await client.controls.renderTemplate({
+  template: {
+    description: "Block PII in output",
+    parameters: {
+      pii_pattern: {
+        type: "regex_re2",
+        label: "PII pattern",
+      },
+    },
+    definitionTemplate: {
+      execution: "server",
+      scope: { stepTypes: ["tool"], stages: ["post"] },
+      condition: {
+        selector: { path: "output" },
+        evaluator: {
+          name: "regex",
+          config: { pattern: { $param: "pii_pattern" } },
+        },
+      },
+      action: { decision: "deny" },
+    },
+  },
+  templateValues: { pii_pattern: "\\b\\d{3}-\\d{2}-\\d{4}\\b" },
+});
+```
+
+### Create a Control from a Template
+
+```ts
+const result = await client.controls.create({
+  name: "block-ssn-output",
+  data: {
+    template: { /* ... template definition ... */ },
+    templateValues: { pii_pattern: "\\b\\d{3}-\\d{2}-\\d{4}\\b" },
+  },
+});
+```
+
+### Template Types
+
+Key generated types for template support:
+
+- `TemplateControlInput` — template + values for creating/updating controls
+- `TemplateDefinition` — the template structure with parameters and definition template
+- `RenderControlTemplateRequest` / `RenderControlTemplateResponse`
+- `UnrenderedTemplateControl` — draft template with incomplete values
+- Parameter types: `StringParam`, `StringListParam`, `EnumParam`, `BooleanParam`, `RegexRe2Param`
+
 ## Current Status
 
 Current implementation status:
