@@ -71,6 +71,12 @@
             ]
           },
           {
+            "group": "Third-Party Agents",
+            "pages": [
+              "third-party-agents/cursor"
+            ]
+          },
+          {
             "group": "Examples",
             "pages": [
               {
@@ -197,6 +203,12 @@
             "pages": [
               "integrations/strands",
               "integrations/google-adk"
+            ]
+          },
+          {
+            "group": "Third-Party Agents",
+            "pages": [
+              "third-party-agents/cursor"
             ]
           }
         ]

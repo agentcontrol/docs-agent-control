@@ -10,6 +10,14 @@ args
 [C,c]hatbot
 [C,c]hatbots
 Clickhouse
+Cursor
+MCP
+PAT
+[S,s]tderr
+[S,s]tdin
+[S,s]tdout
+[S,s]tdlib
+[S,s]ubprocesses
 [C,c]onfig
 CrewAI
 CTEs
