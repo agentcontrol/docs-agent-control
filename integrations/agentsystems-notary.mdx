@@ -7,7 +7,7 @@ AgentSystems Notary writes every Agent Control event to independent, tamper-evid
 
 ## How it works
 
-Raw event payloads stay in your own S3 bucket. A SHA-256 hash of each event is written to the Arweave permaweb (or managed WORM storage). Auditors re-hash the raw payloads and compare them against the stored hashes — matching hashes prove integrity, mismatches expose tampering.
+Each Agent Control event is embedded in a Notary record alongside metadata. A SHA-256 hash of the record is written to your hash storage backend — managed WORM or Arweave — and the record bytes are stored in your S3 bucket. Auditors re-hash the stored bytes and compare against the stored hash — matching hashes prove integrity, mismatches expose tampering.
 
 ## Storage options
 
@@ -23,7 +23,7 @@ Notary integrates as a control event sink. Works with any framework Agent Contro
 ### Prerequisites
 
 - A running Agent Control server with at least one agent and one control configured (see the [Quickstart](/core/quickstart))
-- An S3 bucket for raw event payloads
+- An S3 bucket for record storage
 - A hash storage backend — either an Arweave signing key (decentralized) or an AgentSystems API key (custodied). See the [Notary docs](https://docs.agentsystems.ai/notary) for setup.
 
 ### Install and register the sink
@@ -32,7 +32,7 @@ Notary integrates as a control event sink. Works with any framework Agent Contro
 pip install 'agentsystems-notary[agent-control]'
 ```
 
-The example below uses Arweave. To use the custodied service instead, swap `ArweaveHashStorage` for `CustodiedHashStorage(api_key=..., slug=...)` — see the [Notary docs](https://docs.agentsystems.ai/notary) for the custodied setup.
+This example uses Arweave; for custodied storage, swap `ArweaveHashStorage` for `CustodiedHashStorage(api_key=..., slug=...)`. See the [Notary docs](https://docs.agentsystems.ai/notary) for either setup.
 
 ```python
 import os
@@ -77,7 +77,7 @@ Agent Control's event batcher flushes sink events asynchronously. In short-lived
 
 ## What gets notarized
 
-Each event becomes a canonical JSON record, hashed and pinned to your chosen hash storage. The `pre_execution_record` includes the full Agent Control event — `control_name`, `evaluator_name`, `action`, `matched`, `confidence`, `trace_id`, `span_id`, and the `condition_trace` showing exactly which pattern or rule matched:
+Each Agent Control event is preserved verbatim in the `pre_execution_record` field of the Notary record — `control_name`, `evaluator_name`, `action`, `matched`, `confidence`, `trace_id`, `span_id`, and the `condition_trace` showing exactly which pattern or rule matched:
 
 ```json
 {
@@ -104,7 +104,7 @@ Each event becomes a canonical JSON record, hashed and pinned to your chosen has
 
 ## Verification
 
-Download raw payloads from your S3 bucket, re-hash them, and compare against the stored hashes. Use the [Verify UI](https://verify.agentsystems.ai) for a one-click verification flow, or the open-source [`agentsystems-verify` CLI](https://github.com/agentsystems/agentsystems-verify) for programmatic verification.
+Download the stored bytes from your S3 bucket, compute SHA-256, and compare against your stored hashes. Use the [Verify UI](https://verify.agentsystems.ai) for a one-click verification flow, or the open-source [`agentsystems-verify` CLI](https://github.com/agentsystems/agentsystems-verify) for programmatic verification.
 
 ## Resources
 
