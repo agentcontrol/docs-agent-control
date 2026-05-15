@@ -10,7 +10,7 @@ the returned `Principal`.
 
 ## Operations
 
-Operations are stable strings. Deployers map them to their own permission model.
+Operations are stable strings. Teams map them to their own permission model.
 
 ```text
 controls.read
@@ -170,4 +170,4 @@ Verification requires the expected issuer, `domain="runtime"`, a valid signature
 and `target_id` match the bound target.
 
 The expiry is the earlier of `AGENT_CONTROL_RUNTIME_TOKEN_TTL_SECONDS` and the upstream grant's
-`expires_at` when supplied. Runtime token TTLs are capped at 86400 seconds.
+`expires_at` when supplied. Runtime token lifetimes are capped at 86400 seconds.
