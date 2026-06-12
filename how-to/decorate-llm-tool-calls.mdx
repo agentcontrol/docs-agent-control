@@ -192,13 +192,87 @@ uv run python main.py
 2. **Execution** — the LLM call runs normally.
 3. **Post-stage** — after the function returns, the decorator sends the output to the server. Controls scoped to `"post"` evaluate it. If denied, the output is blocked.
 
-## Decorate tool calls the same way
+## Decorate LLM steps
+
+Decorate the function that performs the LLM call. By default, `@control()` registers the function as an `llm` step and uses the function name as the step name.
+
+```python
+from agent_control import control
+
+
+@control()
+async def generate_answer(message: str) -> str:
+    response = client.chat.completions.create(
+        model="gpt-4.1",
+        messages=[{"role": "user", "content": message}],
+    )
+    return response.choices[0].message.content
+```
+
+Use `step_name` when you want the code to map to a specific step name in Agent Control.
+
+```python
+@control(step_name="customer-support-llm")
+async def generate_answer(message: str) -> str:
+    response = client.chat.completions.create(
+        model="gpt-4.1",
+        messages=[{"role": "user", "content": message}],
+    )
+    return response.choices[0].message.content
+```
+
+Controls scoped to LLM steps should use `step_types: ["llm"]`.
+
+```python
+{
+    "scope": {
+        "step_types": ["llm"],
+        "stages": ["pre", "post"],
+    }
+}
+```
+
+## Decorate tool steps
+
+Decorate the function that executes the tool action, such as a database query, file write, API request, or business operation. For tool steps, make sure the function has tool metadata before `@control()` is applied. The current Python SDK uses `.name` or `.tool_name` to classify a decorated function as a `tool` step.
+
+```python
+from agent_control import control
+
+
+async def _execute_query(sql: str) -> str:
+    return await database.run(sql)
+
+
+_execute_query.name = "execute_query"
+_execute_query.tool_name = "execute_query"
+
+execute_query = control()(_execute_query)
+```
+
+If your framework has a tool decorator, apply the framework tool metadata first and `@control()` after that. In Python, decorators run from the bottom up, so `@tool` must be closest to the function and `@control()` must be above it.
 
 ```python
 @control()
-async def execute_query(query: str) -> str:
-    return await db.run(query)
+@tool("execute_query")
+async def execute_query(sql: str) -> str:
+    return await database.run(sql)
 ```
+
+Controls scoped to tool steps should use `step_types: ["tool"]`.
+
+```python
+{
+    "scope": {
+        "step_types": ["tool"],
+        "stages": ["pre"],
+    }
+}
+```
+
+<Note>
+  If you use `@control(step_name="execute_query")` without tool metadata, the step name changes, but the current Python SDK still treats the function as an `llm` step. Add `.name` or `.tool_name`, or apply your framework's tool decorator before `@control()`, when the control should run on a tool step.
+</Note>
 
 
 ## Any LLM SDK works
