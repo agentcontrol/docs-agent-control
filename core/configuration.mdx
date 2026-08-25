@@ -10,6 +10,7 @@ icon: "gear"
 |----------|---------|-------------|
 | `AGENT_CONTROL_URL` | `http://localhost:8000` | Server URL |
 | `AGENT_CONTROL_API_KEY` | — | API key for authentication |
+| `AGENT_CONTROL_RUNTIME_TOKEN_HEADER` | `Authorization` | Header used to send runtime tokens. Must match the server setting. |
 
 For server database configuration, use the `AGENT_CONTROL_DB_*` variables in the server section below.
 
@@ -26,6 +27,37 @@ For server database configuration, use the `AGENT_CONTROL_DB_*` variables in the
 | `DEBUG` | `false` | Enable debug mode |
 | `API_VERSION` | `v1` | API version prefix |
 | `API_PREFIX` | `/api` | API path prefix |
+
+### Runtime Token
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AGENT_CONTROL_RUNTIME_TOKEN_HEADER` | `Authorization` | Header from which the server reads runtime tokens. Must match the SDK setting. |
+
+By default, the SDK sends the runtime token in the `Authorization` header as `Authorization: Bearer <runtime-token>`.
+
+If a gateway reserves `Authorization` for its own identity credential, configure the server and SDK to use a dedicated header:
+
+```bash
+export AGENT_CONTROL_RUNTIME_TOKEN_HEADER="X-Agent-Control-Runtime-Token"
+```
+
+With this setting, Agent Control SDK 8.5.0 or later sends the runtime token in `X-Agent-Control-Runtime-Token` as a raw token without a `Bearer` prefix. `Authorization` remains available for gateway authentication.
+
+You can alternatively set the header when initializing the SDK:
+
+```python
+agent_control.init(
+    agent_name="my-agent",
+    runtime_token_header="X-Agent-Control-Runtime-Token",
+)
+```
+
+If `runtime_token_header` is not provided, the SDK uses `AGENT_CONTROL_RUNTIME_TOKEN_HEADER`. If neither is configured, it defaults to `Authorization`.
+
+<Note>
+Upgrading to version 8.5.0 or later does not change the default header. A dedicated header is used only after you configure the environment variable or the SDK option.
+</Note>
 
 ### CORS
 
