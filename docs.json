@@ -119,6 +119,7 @@
             "pages": [
               "core/reference",
               "core/configuration",
+              "core/authentication",
               "sdk/python-sdk",
               "sdk/typescript-sdk",
               "testing",
@@ -183,6 +184,7 @@
             "pages": [
               "core/reference",
               "core/configuration",
+              "core/authentication",
               "sdk/python-sdk",
               "sdk/typescript-sdk",
               "testing"
