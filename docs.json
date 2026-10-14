@@ -67,7 +67,8 @@
               "integrations/strands",
               "integrations/google-adk",
               "integrations/crewai",
-              "integrations/langchain"
+              "integrations/langchain",
+              "integrations/agentsystems-notary"
             ]
           },
           {
