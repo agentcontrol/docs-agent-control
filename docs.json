@@ -110,7 +110,7 @@
                 "pages": [
                   "examples/customer-support",
                   "examples/steer-action-demo",
-                  "examples/country-controls"
+                  "examples/attribute-based-controls"
                 ]
               }
             ]
@@ -172,7 +172,7 @@
             "pages": [
               "examples/customer-support",
               "examples/steer-action-demo",
-              "examples/country-controls"
+              "examples/attribute-based-controls"
             ]
           }
         ]

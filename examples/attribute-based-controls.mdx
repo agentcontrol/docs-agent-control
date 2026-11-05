@@ -1,16 +1,18 @@
 ---
-title: Country-Specific Controls
-description: Apply different rules per country, as one control per country or as one composite control.
+title: Attribute-Based Controls
+description: Apply rules only for some values of a request attribute, such as the country. Author them as one control per value or as one composite control.
 ---
 
-Some policies depend on where a user is. For example, an assistant must not return a German IBAN to a user in Germany, or a US Social Security number to a user in the US. This example shows how to write these country-specific (jurisdiction) rules with Agent Control.
+Some rules apply only when a request attribute has a given value. The attribute can be the user's country, tenant, user tier or channel. Agent Control expresses this as a condition on the attribute, combined with the rule itself.
+
+This example uses the country (jurisdiction) as the attribute. An assistant must not return a German IBAN to a user in Germany, or a US Social Security number to a user in the US. To use another attribute, replace the jurisdiction field and its values.
 
 ## What This Demonstrates
 
-- Country-specific rules: each rule applies only when the request's jurisdiction matches.
+- Attribute-based rules: each rule applies only when the request's jurisdiction matches.
 - Two ways to author the same policy:
-  - One control per country.
-  - One composite control with a branch for each country.
+  - One control per attribute value, here one per country.
+  - One composite control with a branch for each value.
 - Baseline controls that apply to every country, next to the country controls.
 - Two ways to send the jurisdiction with each check:
   - In `step.context`, with `evaluate_controls()` or the HTTP API.
@@ -28,8 +30,8 @@ No LLM or API key is needed. The scripts use fixed text in place of a model answ
 
 ```bash
 # From the agent-control repo root
-uv run python examples/country_controls/country_controls_context.py
-uv run python examples/country_controls/country_controls_decorator.py
+uv run python examples/attribute_controls/attribute_controls_context.py
+uv run python examples/attribute_controls/attribute_controls_decorator.py
 ```
 
 Each script creates its agent and controls, then runs the scenarios. It prints PASS or FAIL for each check, and exits non-zero if any check fails. The scripts are safe to re-run.
@@ -235,11 +237,11 @@ For example, if you add an `FR` control but do not add its rule to the `or`, a r
 
 ## Files
 
-- `country_controls_context.py` - Sends the jurisdiction in `step.context` with `evaluate_controls()`
-- `country_controls_decorator.py` - Sends the jurisdiction as a `@control()` function argument
+- `attribute_controls_context.py` - Sends the jurisdiction in `step.context` with `evaluate_controls()`
+- `attribute_controls_decorator.py` - Sends the jurisdiction as a `@control()` function argument
 
 ## Source Code
 
 View the complete example with all scripts and setup instructions:
 
-[`Country-Specific Controls Example`](https://github.com/agentcontrol/agent-control/tree/main/examples/country_controls)
+[`Attribute-Based Controls Example`](https://github.com/agentcontrol/agent-control/tree/main/examples/attribute_controls)
