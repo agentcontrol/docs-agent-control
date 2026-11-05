@@ -11,6 +11,7 @@ Some policies depend on where a user is. For example, an assistant must not retu
 - Two ways to author the same policy:
   - One control per country.
   - One composite control with a branch for each country.
+- Baseline controls that apply to every country, next to the country controls.
 - Two ways to send the jurisdiction with each check:
   - In `step.context`, with `evaluate_controls()` or the HTTP API.
   - As a function argument, with the `@control()` decorator.
@@ -36,6 +37,8 @@ Each script creates its agent and controls, then runs the scenarios. It prints P
 ## Send the Jurisdiction
 
 The caller must send the jurisdiction with each check. Use an ISO 3166-1 alpha-2 code, such as `DE` or `US`.
+
+If the country code arrives in a request header, such as `x-ai-jurisdiction: DE`, the caller copies it into `step.context.jurisdiction`. Agent Control does not read request headers.
 
 ### In `step.context` (recommended)
 
@@ -154,20 +157,52 @@ countries = {
 | Match result | Names the country's control | Names the composite control |
 | Change one country | Edit or disable only that control | Edit the shared condition |
 
-Both options give the same decisions. The example runs them side by side:
+## Baseline and Country Controls
 
-| Scenario | Expected |
-|---|---|
-| DE + IBAN | Blocked |
-| US + IBAN (no US rule) | Allowed |
-| US + SSN | Blocked |
-| DE + SSN (no DE rule) | Allowed |
-| US + clean text | Allowed |
+Most policies combine two kinds of rules:
+
+- **Baseline controls** apply to every country. They have no jurisdiction condition.
+- **Country controls** apply only to some countries. They include the jurisdiction condition.
+
+Keep them as separate controls. A baseline control is a plain control:
+
+```python
+baseline_email = {
+    "execution": "server",
+    "scope": {"step_types": ["llm"], "stages": ["post"]},
+    "condition": {
+        "selector": {"path": "output"},
+        "evaluator": {
+            "name": "regex",
+            "config": {"pattern": r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"},
+        },
+    },
+    "action": {"decision": "deny"},
+}
+```
+
+Agent Control evaluates every control in scope, so the baseline and the country controls run together on each check. A baseline control also applies when the request has no jurisdiction.
+
+To tell the two kinds apart, use a naming convention or `tags`, for example `["baseline"]` and `["country", "DE"]`.
+
+## Scenarios
+
+Both authoring options give the same decisions. The example runs them side by side, with the baseline control on both:
+
+| Scenario | Expected | Matched by |
+|---|---|---|
+| DE + IBAN | Blocked | DE country rule |
+| US + IBAN (no US rule) | Allowed | - |
+| US + SSN | Blocked | US country rule |
+| DE + SSN (no DE rule) | Allowed | - |
+| US + clean text | Allowed | - |
+| DE + email | Blocked | Baseline |
+| No jurisdiction + email | Blocked | Baseline |
 
 ## Missing Jurisdiction
 
 <Warning>
-  If a request has no jurisdiction, no country rule matches, so the request is allowed. Agent Control has no built-in default jurisdiction.
+  If a request has no jurisdiction, no country rule matches. Only baseline controls apply, so the request is allowed unless a baseline control matches. Agent Control has no built-in default jurisdiction.
 </Warning>
 
 If you need a strict default, add a control that matches when the jurisdiction is missing or not covered:
