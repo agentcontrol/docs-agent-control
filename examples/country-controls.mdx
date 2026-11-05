@@ -1,0 +1,186 @@
+---
+title: Country-Specific Controls
+description: Apply different rules per country, as one control per country or as one composite control.
+---
+
+Some policies depend on where a user is. For example, an assistant must not return a German IBAN to a user in Germany, or a US Social Security number to a user in the US. This example shows how to write these country-specific (jurisdiction) rules with Agent Control.
+
+## What This Demonstrates
+
+- Country-specific rules: each rule applies only when the request's jurisdiction matches.
+- Two ways to author the same policy:
+  - One control per country.
+  - One composite control with a branch for each country.
+- Two ways to send the jurisdiction with each check:
+  - In `step.context`, with `evaluate_controls()` or the HTTP API.
+  - As a function argument, with the `@control()` decorator.
+
+No LLM or API key is needed. The scripts use fixed text in place of a model answer.
+
+## Quick Start
+
+### Prerequisites
+
+1. Start the Agent Control server: `make server-run` from the repo root.
+
+### Run the Demo
+
+```bash
+# From the agent-control repo root
+uv run python examples/country_controls/country_controls_context.py
+uv run python examples/country_controls/country_controls_decorator.py
+```
+
+Each script creates its agent and controls, then runs the scenarios. The scripts are safe to re-run.
+
+## Send the Jurisdiction
+
+The caller must send the jurisdiction with each check. Use an ISO 3166-1 alpha-2 code, such as `DE` or `US`.
+
+### In `step.context` (recommended)
+
+`context` holds request metadata, separate from the data that the controls check. Controls select the value with the path `context.jurisdiction`.
+
+```python
+result = await agent_control.evaluate_controls(
+    "support-answer",
+    input="What is on file for me?",
+    output=answer_text,
+    context={"jurisdiction": "DE"},
+    step_type="llm",
+    stage="post",
+    agent_name=AGENT_NAME,
+)
+if not result.is_safe:
+    ...  # blocked
+```
+
+Gateways and non-Python clients send the same field in the body of `POST /api/v1/evaluation`:
+
+```json
+{
+  "agent_name": "my-agent",
+  "stage": "post",
+  "step": {
+    "type": "llm",
+    "name": "support-answer",
+    "input": "What is on file for me?",
+    "output": "Your refund goes to DE89 3704 0044 0532 0130 00.",
+    "context": {"jurisdiction": "DE"}
+  }
+}
+```
+
+### As a decorator argument
+
+`@control()` builds the step from the function's arguments, and it cannot set `step.context`. To use the decorator, pass the jurisdiction as a function argument and select it with `input.jurisdiction`.
+
+```python
+@control(step_name="support-answer", step_type="tool")
+async def support_answer(*, text: str, jurisdiction: str) -> str:
+    return text
+```
+
+<Note>
+  This works only for `tool` steps and custom step types, where `input` is the dict of all arguments. For an `llm` step, `input` is a single string, so the path `input.jurisdiction` does not resolve.
+</Note>
+
+## Author the Controls
+
+Each country rule is an `and` of two conditions:
+
+- The jurisdiction is in a list, checked with the `list` evaluator.
+- The rule matches, here a `regex` on the output.
+
+### Option 1: One control per country
+
+```python
+de_iban = {
+    "execution": "server",
+    "scope": {"step_types": ["llm"], "stages": ["post"]},
+    "condition": {
+        "and": [
+            {
+                "selector": {"path": "context.jurisdiction"},
+                "evaluator": {"name": "list", "config": {"values": ["DE"]}},
+            },
+            {
+                "selector": {"path": "output"},
+                "evaluator": {
+                    "name": "regex",
+                    "config": {"pattern": r"\bDE\d{2}(?: ?\d{4}){4} ?\d{2}\b"},
+                },
+            },
+        ]
+    },
+    "action": {"decision": "deny"},
+}
+```
+
+Write a similar control for each country, for example `US` with a Social Security number pattern.
+
+### Option 2: One composite control
+
+Put each country's `and` branch inside one `or`:
+
+```python
+countries = {
+    "execution": "server",
+    "scope": {"step_types": ["llm"], "stages": ["post"]},
+    "condition": {
+        "or": [
+            {"and": [jurisdiction_in(["DE"]), output_matches(DE_IBAN)]},
+            {"and": [jurisdiction_in(["US"]), output_matches(US_SSN)]},
+        ]
+    },
+    "action": {"decision": "deny"},
+}
+```
+
+`jurisdiction_in()` and `output_matches()` are small helpers in the example scripts. They return the leaf conditions shown in Option 1.
+
+### Which option to use
+
+| | One control per country | One composite control |
+|---|---|---|
+| Number of controls | One per country | One |
+| Match result | Names the country's control | Names the composite control |
+| Change one country | Edit or disable only that control | Edit the shared condition |
+
+Both options give the same decisions. The example runs them side by side:
+
+| Scenario | Expected |
+|---|---|
+| DE + IBAN | Blocked |
+| US + IBAN (no US rule) | Allowed |
+| US + SSN | Blocked |
+| DE + SSN (no DE rule) | Allowed |
+| US + clean text | Allowed |
+
+## Missing Jurisdiction
+
+<Warning>
+  If a request has no jurisdiction, no country rule matches, so the request is allowed. Agent Control has no built-in default jurisdiction.
+</Warning>
+
+If you need a strict default, add a control that matches when the jurisdiction is missing or not covered:
+
+```python
+{
+    "and": [
+        {"not": jurisdiction_in(["DE", "US"])},
+        {"or": [output_matches(DE_IBAN), output_matches(US_SSN)]},
+    ]
+}
+```
+
+## Files
+
+- `country_controls_context.py` - Sends the jurisdiction in `step.context` with `evaluate_controls()`
+- `country_controls_decorator.py` - Sends the jurisdiction as a `@control()` function argument
+
+## Source Code
+
+View the complete example with all scripts and setup instructions:
+
+[`Country-Specific Controls Example`](https://github.com/agentcontrol/agent-control/tree/main/examples/country_controls)
