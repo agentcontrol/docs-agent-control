@@ -31,7 +31,7 @@ uv run python examples/country_controls/country_controls_context.py
 uv run python examples/country_controls/country_controls_decorator.py
 ```
 
-Each script creates its agent and controls, then runs the scenarios. The scripts are safe to re-run.
+Each script creates its agent and controls, then runs the scenarios. It prints PASS or FAIL for each check, and exits non-zero if any check fails. The scripts are safe to re-run.
 
 ## Send the Jurisdiction
 
@@ -84,6 +84,13 @@ async def support_answer(*, text: str, jurisdiction: str) -> str:
 <Note>
   This works only for `tool` steps and custom step types, where `input` is the dict of all arguments. For an `llm` step, `input` is a single string, so the path `input.jurisdiction` does not resolve.
 </Note>
+
+<Warning>
+  The controls below use the `context` path. For the decorator path, make two changes in each control, or the controls never match and every request is allowed:
+
+  - Set `"step_types"` to `["tool"]`.
+  - Set the jurisdiction selector `path` to `"input.jurisdiction"`.
+</Warning>
 
 ## Author the Controls
 
@@ -166,13 +173,25 @@ Both options give the same decisions. The example runs them side by side:
 If you need a strict default, add a control that matches when the jurisdiction is missing or not covered:
 
 ```python
-{
-    "and": [
-        {"not": jurisdiction_in(["DE", "US"])},
-        {"or": [output_matches(DE_IBAN), output_matches(US_SSN)]},
-    ]
+strict_default = {
+    "execution": "server",
+    "scope": {"step_types": ["llm"], "stages": ["post"]},
+    "condition": {
+        "and": [
+            {"not": jurisdiction_in(["DE", "US"])},
+            {"or": [output_matches(DE_IBAN), output_matches(US_SSN)]},
+        ]
+    },
+    "action": {"decision": "deny"},
 }
 ```
+
+Keep this control in sync with the country controls:
+
+- The `not` list must name every country that has a rule.
+- The `or` must repeat every country rule.
+
+For example, if you add an `FR` control but do not add its rule to the `or`, a request with no jurisdiction that matches the `FR` rule is allowed.
 
 ## Files
 
