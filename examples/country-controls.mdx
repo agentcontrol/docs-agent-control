@@ -38,7 +38,7 @@ Each script creates its agent and controls, then runs the scenarios. It prints P
 
 The caller must send the jurisdiction with each check. Use an ISO 3166-1 alpha-2 code, such as `DE` or `US`.
 
-If the country code arrives in a request header, such as `x-ai-jurisdiction: DE`, the caller copies it into `step.context.jurisdiction`. Agent Control does not read request headers.
+If the country code arrives in a request header, such as `x-ai-jurisdiction: DE`, the caller copies it into `step.context.jurisdiction`. Agent Control does not map request headers into the step.
 
 ### In `step.context` (recommended)
 
@@ -89,10 +89,10 @@ async def support_answer(*, text: str, jurisdiction: str) -> str:
 </Note>
 
 <Warning>
-  The controls below use the `context` path. For the decorator path, make two changes in each control, or the controls never match and every request is allowed:
+The controls below use the `context` path. For the decorator path, make two changes in each control, or the controls never match and every request is allowed:
 
-  - Set `"step_types"` to `["tool"]`.
-  - Set the jurisdiction selector `path` to `"input.jurisdiction"`.
+- Set `"step_types"` to `["tool"]`.
+- Set the jurisdiction selector `path` to `"input.jurisdiction"`.
 </Warning>
 
 ## Author the Controls
@@ -181,7 +181,11 @@ baseline_email = {
 }
 ```
 
-Agent Control evaluates every control in scope, so the baseline and the country controls run together on each check. A baseline control also applies when the request has no jurisdiction.
+The baseline and the country controls run together on each check. A baseline control also applies when the request has no jurisdiction.
+
+<Note>
+  Agent Control evaluates the controls in parallel and stops the remaining evaluations after the first `deny` match. If a baseline control and a country control both match, `result.matches` usually names only one of them.
+</Note>
 
 To tell the two kinds apart, use a naming convention or `tags`, for example `["baseline"]` and `["country", "DE"]`.
 
@@ -197,6 +201,7 @@ Both authoring options give the same decisions. The example runs them side by si
 | DE + SSN (no DE rule) | Allowed | - |
 | US + clean text | Allowed | - |
 | DE + email | Blocked | Baseline |
+| No jurisdiction + IBAN | Allowed | - (country rules are skipped) |
 | No jurisdiction + email | Blocked | Baseline |
 
 ## Missing Jurisdiction
