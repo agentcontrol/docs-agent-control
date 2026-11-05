@@ -182,7 +182,13 @@ When background refresh is enabled, the SDK refreshes control snapshots via `GET
 #### `@control()`
 
 ```python
-def control(policy: str | None = None, step_name: str | None = None):
+def control(
+    policy: str | None = None,
+    step_name: str | None = None,
+    step_type: str | None = None,
+    *,
+    tools=None,
+):
 ```
 
 Decorator to protect a function with server-defined controls.
@@ -191,6 +197,8 @@ Decorator to protect a function with server-defined controls.
 
 - `policy`: Optional policy label for code readability when multiple policies exist
 - `step_name`: Optional step name override for the registered step
+- `step_type`: Optional step type override, for example `"tool"`. If not set, tool-like functions are `tool` steps and other functions are `llm` steps
+- `tools`: Optional tool definitions for `llm` steps, as a static list or a provider called at each check
 
 **Example:**
 
